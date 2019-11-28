@@ -22,10 +22,7 @@ or add
 to the require section of your `composer.json` file.
 
 
-Usage
------
-
-Once the extension is installed, simply use it in your code by  :
-
+Start the migration (console):
 ```php
-<?= \koperdog\yii2nsblog\AutoloadExample::widget(); ?>```
+php yii migrate --migrationPath=@vendor/koperdog/yii2-nsblog/migrations
+```
