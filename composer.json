@@ -1,0 +1,21 @@
+{
+    "name": "koperdog/yii2-nsblog",
+    "description": "Nested category, post for multilanguage, multidomain site",
+    "type": "yii2-extension",
+    "keywords": ["yii2"," nested sets blog"," category"," post"," ns"],
+    "license": "Apache-2.0",
+    "authors": [
+        {
+            "name": "koperdog",
+            "email": "koperdog@gmail.com"
+        }
+    ],
+    "require": {
+        "yiisoft/yii2": "~2.0.0"
+    },
+    "autoload": {
+        "psr-4": {
+            "koperdog\\yii2nsblog\\": ""
+        }
+    }
+}
