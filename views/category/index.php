@@ -9,6 +9,10 @@ use yii\widgets\Pjax;
 
 $this->title = Yii::t('nsblog', 'Categories');
 $this->params['breadcrumbs'][] = $this->title;
+
+koperdog\yii2nsblog\AssetBundle::register($this);
+
+$this->registerJsVar('sortUrl', yii\helpers\Url::to(['sort']));
 ?>
 <div class="category-index">
 
@@ -17,41 +21,47 @@ $this->params['breadcrumbs'][] = $this->title;
     <p>
         <?= Html::a(Yii::t('nsblog', 'Create Category'), ['create'], ['class' => 'btn btn-success']) ?>
     </p>
-
     <?php Pjax::begin(); ?>
-    <?php // echo $this->render('_search', ['model' => $searchModel]); ?>
 
-    <?= GridView::widget([
+    <?=    koperdog\yii2treeview\TreeView::widget([
         'dataProvider' => $dataProvider,
-        'filterModel' => $searchModel,
+        'filterModel'  => $searchForm,
+        'id' => 'grid',
+//        'collapse' => true,
+        'depthRoot' => 1,
         'columns' => [
-            ['class' => 'yii\grid\SerialColumn'],
-
+            ['class' => '\koperdog\yii2treeview\base\CheckboxColumn'],
             'id',
-            'name',
-            'url:url',
-            'author_id',
-            'status',
-            //'h1',
-            //'image',
-            //'preview_text:ntext',
-            //'full_text:ntext',
-            //'tree',
-            //'lft',
-            //'rgt',
-            //'depth',
-            //'position',
-            //'access_show',
-            //'domain_id',
-            //'lang_id',
-            //'publish_at',
-            //'created_at',
-            //'updated_at',
-
-            ['class' => 'yii\grid\ActionColumn'],
-        ],
-    ]); ?>
-
+            [
+                'label' => 'name',
+                'attribute' => 'name',
+                'format' => 'html',
+                'value' => function($model, $key, $index){
+                    $anchor = str_repeat(' — ', $model->depth - 1).$model->name;
+                    return Html::a($anchor, yii\helpers\Url::to(['update', 'id' => $model->id]));
+                }
+            ],
+            [
+                'label' => 'url',
+                'attribute' => 'url',
+                'format' => 'html',
+                'value' => function($model, $key, $index){
+                    return Html::a($model->url, yii\helpers\Url::to(['update', 'id' => $model->id]));
+                }
+            ],
+            [
+                'label' => 'author',
+                'attribute' => 'author.username',
+                'format' => 'html',
+                'value' => function($model, $key, $index){
+                    return Html::a($model->author->username, yii\helpers\Url::to(['update', 'id' => $model->id]));
+                }  
+            ],
+            'position',
+            'status'
+        ]
+    ]);?>
+    
     <?php Pjax::end(); ?>
 
 </div>

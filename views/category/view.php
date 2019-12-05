@@ -43,7 +43,7 @@ $this->params['breadcrumbs'][] = $this->title;
             'rgt',
             'depth',
             'position',
-            'access_show',
+            'access_read',
             'domain_id',
             'lang_id',
             'publish_at',

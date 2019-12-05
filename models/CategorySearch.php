@@ -17,7 +17,7 @@ class CategorySearch extends Category
     public function rules()
     {
         return [
-            [['id', 'author_id', 'status', 'tree', 'lft', 'rgt', 'depth', 'position', 'access_show', 'domain_id', 'lang_id', 'publish_at', 'created_at', 'updated_at'], 'integer'],
+            [['id', 'author_id', 'status', 'tree', 'lft', 'rgt', 'depth', 'position', 'access_read', 'domain_id', 'lang_id', 'publish_at', 'created_at', 'updated_at'], 'integer'],
             [['name', 'url', 'h1', 'image', 'preview_text', 'full_text'], 'safe'],
         ];
     }
@@ -41,18 +41,19 @@ class CategorySearch extends Category
     public function search($params)
     {
         $query = Category::find();
-
+        $query->andWhere(['!=', 'id', 1]);
         // add conditions that should always apply here
 
         $dataProvider = new ActiveDataProvider([
             'query' => $query,
+            'pagination' => [
+                'pageSize' => 20,
+            ]
         ]);
 
         $this->load($params);
 
         if (!$this->validate()) {
-            // uncomment the following line if you do not want to return any records when validation fails
-            // $query->where('0=1');
             return $dataProvider;
         }
 
@@ -66,7 +67,7 @@ class CategorySearch extends Category
             'rgt' => $this->rgt,
             'depth' => $this->depth,
             'position' => $this->position,
-            'access_show' => $this->access_show,
+            'access_read' => $this->access_read,
             'domain_id' => $this->domain_id,
             'lang_id' => $this->lang_id,
             'publish_at' => $this->publish_at,
@@ -80,6 +81,11 @@ class CategorySearch extends Category
             ->andFilterWhere(['like', 'image', $this->image])
             ->andFilterWhere(['like', 'preview_text', $this->preview_text])
             ->andFilterWhere(['like', 'full_text', $this->full_text]);
+        
+        $query->with('author');
+       
+        $query->orderBy(['tree' => SORT_ASC, 'lft' => SORT_ASC]);
+        
 
         return $dataProvider;
     }

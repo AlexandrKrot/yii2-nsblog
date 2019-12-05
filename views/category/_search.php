@@ -46,7 +46,7 @@ use yii\widgets\ActiveForm;
 
     <?php // echo $form->field($model, 'position') ?>
 
-    <?php // echo $form->field($model, 'access_show') ?>
+    <?php // echo $form->field($model, 'access_read') ?>
 
     <?php // echo $form->field($model, 'domain_id') ?>
 

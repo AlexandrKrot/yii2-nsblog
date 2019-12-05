@@ -22,7 +22,7 @@ use creocoder\nestedsets\NestedSetsBehavior;
  * @property int $rgt
  * @property int $depth
  * @property int $position
- * @property int $access_show
+ * @property int $access_read
  * @property int|null $domain_id
  * @property int|null $lang_id
  * @property int $publish_at
@@ -41,6 +41,8 @@ use creocoder\nestedsets\NestedSetsBehavior;
  */
 class Category extends \yii\db\ActiveRecord
 {
+    const OFFSET_ROOT = 1;
+    public $children;
     /**
      * {@inheritdoc}
      */
@@ -54,10 +56,11 @@ class Category extends \yii\db\ActiveRecord
             \yii\behaviors\TimeStampBehavior::className(),
             'tree' => [
                 'class' => NestedSetsBehavior::className(),
+                //'treeAttribute' => 'tree',
             ],
         ];
     }
-    
+
     public function transactions()
     {
         return [
@@ -76,8 +79,8 @@ class Category extends \yii\db\ActiveRecord
     public function rules()
     {
         return [            
-            [['name', 'url', 'author_id', 'status', 'h1', 'access_show'], 'required'],
-            [['author_id', 'status', 'tree', 'lft', 'rgt', 'depth', 'position', 'access_show', 'domain_id', 'lang_id', 'publish_at', 'created_at', 'updated_at'], 'integer'],
+            [['name', 'url', 'author_id', 'status', 'h1', 'access_read'], 'required'],
+            [['author_id', 'status', 'tree', 'lft', 'rgt', 'depth', 'position', 'access_read', 'domain_id', 'lang_id', 'publish_at', 'created_at', 'updated_at'], 'integer'],
             [['position'], 'default', 'value' => 0],
             [['preview_text', 'full_text'], 'string'],
             [['name', 'url', 'h1', 'image'], 'string', 'max' => 255],
@@ -106,7 +109,7 @@ class Category extends \yii\db\ActiveRecord
             'rgt' => Yii::t('app', 'Rgt'),
             'depth' => Yii::t('app', 'Depth'),
             'position' => Yii::t('app', 'Position'),
-            'access_show' => Yii::t('app', 'Access Show'),
+            'access_read' => Yii::t('app', 'Access Read'),
             'domain_id' => Yii::t('app', 'Domain ID'),
             'lang_id' => Yii::t('app', 'Lang ID'),
             'publish_at' => Yii::t('app', 'Publish At'),
@@ -152,17 +155,55 @@ class Category extends \yii\db\ActiveRecord
 
         $rows = self::find()->
             select('id, name, depth')->
-            where(['NOT IN', 'id', $children])->
+            andWhere(['!=', 'id', 1])->    
+            andWhere(['NOT IN', 'id', $children])->
             orderBy('tree, lft, position')->
             all();
 
         $return = [];
         foreach ($rows as $row)
-            $return[$row->id] = str_repeat('-', $row->depth) . ' ' . $row->name;
+            $return[$row->id] = str_repeat('-', $row->depth - self::OFFSET_ROOT) . ' ' . $row->name;
 
         return $return;
     }
+    
+    /**
+     * Get a full tree as a list, except the node and its children
+     * @param  integer $node_id node's ID
+     * @return array array of node
+     */
+    public static function getTreeArray($node_id = 0)
+    {
+        $children = [];
 
+        if ( ! empty($node_id)){
+            $children = array_merge(self::findOne($node_id)->children()->column(),[$node_id]);
+        }
+
+        $rows = self::find()
+            ->where(['NOT IN', 'id', $children])
+            ->orderBy('tree, lft, position')
+            ->asArray()
+            ->all();
+
+        $return  = [];
+        $last_id = null;
+        $level   = 0;
+        
+        foreach ($rows as $row){
+            if($last_id && $row['depth'] > $level){
+                $return[$last_id]['child'] = $row;
+            }
+            else{
+                $return[$row['id']] = $row;
+            }
+            $level   = $row['depth'];
+            $last_id = $row['id'];
+        }
+
+        return $return;
+    }
+    
     /**
      * @return \yii\db\ActiveQuery
      */
@@ -230,8 +271,8 @@ class Category extends \yii\db\ActiveRecord
     /**
      * @return \yii\db\ActiveQuery
      */
-    public function getRelatedCategories0()
+    public function getAuthor()
     {
-        return $this->hasMany(RelatedCategory::className(), ['parent_id' => 'id']);
+        return $this->hasOne(\Yii::$app->user->identityClass, ['id' => 'author_id']);
     }
 }

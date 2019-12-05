@@ -7,6 +7,8 @@ use yii\db\Migration;
  */
 class m191128_054256_create_blog_tables extends Migration
 {
+    const PUBLISH     = 1;
+    const ACCESS_READ = 1;
     /**
      * {@inheritdoc}
      */
@@ -15,6 +17,8 @@ class m191128_054256_create_blog_tables extends Migration
         $this->createCategory();
         $this->createPage();
         $this->createRelations();
+        
+        $this->fillData();
     }
 
     /**
@@ -51,7 +55,7 @@ class m191128_054256_create_blog_tables extends Migration
             'rgt'        => $this->integer()->notNull(),
             'depth'      => $this->integer()->notNull(),
             'position'   => $this->integer()->notNull()->defaultValue(0),
-            'access_show'   => $this->integer()->notNull(),
+            'access_read'   => $this->integer()->notNull(),
             'domain_id'  => $this->integer(),
             'lang_id'    => $this->integer(),
             'publish_at' => $this->integer()->notNull(),
@@ -77,6 +81,7 @@ class m191128_054256_create_blog_tables extends Migration
         $this->addForeignKey('fk-meta_blog_category-src_id', '{{%meta_blog_category}}', 'src_id', '{{%category}}', 'id');
         $this->addForeignKey('fk-meta_blog_category-domain_id', '{{%meta_blog_category}}', 'domain_id', '{{%domain}}', 'id');
         $this->addForeignKey('fk-meta_blog_category-lang_id', '{{%meta_blog_category}}', 'lang_id', '{{%language}}', 'id');
+        
     }
     
     private function createPage()
@@ -154,5 +159,26 @@ class m191128_054256_create_blog_tables extends Migration
         
         $this->addForeignKey('fk-related_page-parent_id', '{{%additional_page}}', 'parent_id', '{{%category}}', 'id');
         $this->addForeignKey('fk-related_page-child_id', '{{%additional_page}}', 'child_id', '{{%page}}', 'id');
+    }
+    
+    private function fillData()
+    {
+        $time = time();
+        
+        $this->insert('{{%category}}', [
+            'name'        => 'Tree Categories',
+            'url'         => '',
+            'author_id'   => 0,
+            'status'      => self::PUBLISH,
+            'h1'          => 'Tree Categories',
+            'image'       => '',
+            'lft'         => 1,
+            'rgt'         => 2,
+            'depth'       => 0,
+            'access_read' => self::ACCESS_READ,
+            'publish_at'  => $time,
+            'created_at'  => $time,
+            'updated_at'  => $time
+        ]);
     }
 }

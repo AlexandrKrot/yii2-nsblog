@@ -2,6 +2,8 @@
 
 namespace koperdog\yii2nsblog\models;
 
+use creocoder\nestedsets\NestedSetsQueryBehavior;
+
 /**
  * This is the ActiveQuery class for [[Category]].
  *
@@ -9,11 +11,11 @@ namespace koperdog\yii2nsblog\models;
  */
 class CategoryQuery extends \yii\db\ActiveQuery
 {
-    /*public function active()
-    {
-        return $this->andWhere('[[status]]=1');
-    }*/
-
+    public function behaviors() {
+        return [
+            NestedSetsQueryBehavior::className(),
+        ];
+    }
     /**
      * {@inheritdoc}
      * @return Category[]|array

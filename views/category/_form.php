@@ -22,7 +22,7 @@ use yii\widgets\ActiveForm;
             'Category[parentId]',
             $model->parentId,
             koperdog\yii2nsblog\models\Category::getTree($model->id),
-            ['prompt' => 'No Parent (saved as root)', 'class' => 'form-control']
+            ['prompt' => Yii::t('nsblog','No Parent'), 'class' => 'form-control']
         );?>
     </div>
 
@@ -38,7 +38,7 @@ use yii\widgets\ActiveForm;
 
     <?= $form->field($model, 'full_text')->textarea(['rows' => 6]) ?>
 
-    <?= $form->field($model, 'access_show')->textInput() ?>
+    <?= $form->field($model, 'access_read')->textInput() ?>
 
     <?= $form->field($model, 'publish_at')->textInput() ?>
 

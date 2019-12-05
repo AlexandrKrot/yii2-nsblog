@@ -14,6 +14,8 @@ use yii\filters\VerbFilter;
  */
 class CategoryController extends Controller
 {
+    private $categoryService;
+    private $categoryRepository;
     /**
      * {@inheritdoc}
      */
@@ -28,19 +30,44 @@ class CategoryController extends Controller
             ],
         ];
     }
+    
+    public function __construct
+    (
+        $id, 
+        $module, 
+        \koperdog\yii2nsblog\useCases\CategoryService $categoryService,
+        \koperdog\yii2nsblog\repositories\CategoryRepository $categoryRepository,
+        $config = []
+    )
+    {
+        parent::__construct($id, $module, $config);
+        
+        $this->categoryService    = $categoryService;
+        $this->categoryRepository = $categoryRepository;
+    }
+    
+    public function actionSort()
+    {
+        \Yii::$app->response->format = \yii\web\Response::FORMAT_JSON;
+        
+        $data = json_decode(\Yii::$app->request->post('sort'));
+        $result = $this->categoryService->sort($data);
+        
+        return ['result' => $result];
+    }
 
     /**
      * Lists all Category models.
      * @return mixed
      */
     public function actionIndex()
-    {
-        $searchModel = new CategorySearch();
-        $dataProvider = $searchModel->search(Yii::$app->request->queryParams);
+    {       
+        $dataProvider = $this->categoryRepository->search(\Yii::$app->request->queryParams);
 
         return $this->render('index', [
-            'searchModel' => $searchModel,
-            'dataProvider' => $dataProvider,
+            'searchForm'     => $this->categoryRepository->getSearchModel(),
+            'dataProvider'   => $dataProvider,
+            'categoriesTree' => $categoriesTree,
         ]);
     }
 
@@ -67,20 +94,19 @@ class CategoryController extends Controller
         $model = new Category();
         if (!empty(Yii::$app->request->post()))
         {
-            $post            = Yii::$app->request->post('Category');
+            $post = Yii::$app->request->post('Category');
             
             $model->load(Yii::$app->request->post());
             $model->author_id = \Yii::$app->user->id;
             
-            $parent_id       = $post['parentId'];
+            $parent_id        = $post['parentId'];
 
-            if (empty($parent_id))
-                $model->makeRoot();
-            else
-            {
-                $parent = Category::findOne($parent_id);
-                $model->appendTo($parent);
+            if (empty($parent_id)){
+                $parent_id = 1;
             }
+            
+            $parent = Category::findOne($parent_id);
+            $model->appendTo($parent);
             
             return $this->redirect(['view', 'id' => $model->id]);
         }
@@ -112,16 +138,13 @@ class CategoryController extends Controller
             {
                 if (empty($parent_id))
                 {
-                    if ( ! $model->isRoot())
-                        $model->makeRoot();
+                    $parent_id = 1;
                 }
-                else // move node to other root 
+                
+                if ($model->id != $parent_id)
                 {
-                    if ($model->id != $parent_id)
-                    {
-                        $parent = Category::findOne($parent_id);
-                        $model->appendTo($parent);
-                    }
+                    $parent = Category::findOne($parent_id);
+                    $model->appendTo($parent);
                 }
 
                 return $this->redirect(['view', 'id' => $model->id]);
