@@ -18,6 +18,8 @@ $this->params['breadcrumbs'][] = Yii::t('nsblog', 'Update');
 
     <?= $this->render('_form', [
         'model' => $model,
+        'allCategories' => $allCategories,
+        'allPages' => $allPages,
     ]) ?>
 
 </div>

@@ -11,6 +11,7 @@ use Yii;
  * @property string $name
  * @property string $url
  * @property int $author_id
+ * @property int $category_id
  * @property string $image
  * @property string|null $preview_text
  * @property string|null $full_text
@@ -43,12 +44,27 @@ class Page extends \yii\db\ActiveRecord
     public function rules()
     {
         return [
-            [['name', 'url', 'author_id', 'image', 'publish_at', 'created_at', 'updated_at'], 'required'],
-            [['author_id', 'position', 'domain_id', 'lang_id', 'publish_at', 'created_at', 'updated_at'], 'integer'],
+            [['name', 'url', 'image', 'publish_at',], 'required'],
+            [['author_id', 'position', 'domain_id', 'lang_id', 'publish_at', 'created_at', 'updated_at', 'category_id'], 'integer'],
             [['preview_text', 'full_text'], 'string'],
             [['name', 'url', 'image'], 'string', 'max' => 255],
-            [['domain_id'], 'exist', 'skipOnError' => true, 'targetClass' => Domain::className(), 'targetAttribute' => ['domain_id' => 'id']],
-            [['lang_id'], 'exist', 'skipOnError' => true, 'targetClass' => Language::className(), 'targetAttribute' => ['lang_id' => 'id']],
+            [['domain_id'], 'exist', 'skipOnError' => true, 'targetClass' => \koperdog\yii2sitemanager\models\Domain::className(), 'targetAttribute' => ['domain_id' => 'id']],
+            [['lang_id'], 'exist', 'skipOnError' => true, 'targetClass' => \koperdog\yii2sitemanager\models\Language::className(), 'targetAttribute' => ['lang_id' => 'id']],
+        ];
+    }
+    
+    /**
+     * {@inheritdoc}
+     */
+    public function behaviors()
+    {
+        return [
+            [
+                'class' => \yii\behaviors\TimestampBehavior::className(),
+                'createdAtAttribute' => 'created_at',
+                'updatedAtAttribute' => 'updated_at',
+                'value' => new \yii\db\Expression('NOW()'),
+            ],
         ];
     }
 
@@ -71,6 +87,7 @@ class Page extends \yii\db\ActiveRecord
             'publish_at' => Yii::t('app', 'Publish At'),
             'created_at' => Yii::t('app', 'Created At'),
             'updated_at' => Yii::t('app', 'Updated At'),
+            'addPages'   => Yii::t('app', 'Additional Pages'),
         ];
     }
 

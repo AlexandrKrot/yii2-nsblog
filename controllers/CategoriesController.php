@@ -12,7 +12,7 @@ use yii\filters\VerbFilter;
 /**
  * CategoryController implements the CRUD actions for Category model.
  */
-class CategoryController extends Controller
+class CategoriesController extends Controller
 {
     private $categoryService;
     private $categoryRepository;
@@ -30,6 +30,22 @@ class CategoryController extends Controller
             ],
         ];
     }
+    
+    /**
+     * 
+     * {@inheritdoc}
+     */
+//    public function actions()
+//    {
+//        return [
+//            'images-get' => [
+//                'class' => 'vova07\imperavi\actions\GetImagesAction',
+//                'url' => 'http://my-site.com/images/', // Directory URL address, where files are stored.
+//                'path' => '@alias/to/my/path', // Or absolute path to directory where files are stored.
+//                'options' => ['only' => ['*.jpg', '*.jpeg', '*.png', '*.gif', '*.ico']], // These options are by default.
+//            ],
+//        ];
+//    }
     
     public function __construct
     (
@@ -61,7 +77,10 @@ class CategoryController extends Controller
      * @return mixed
      */
     public function actionIndex()
-    {       
+    {   
+//        debug(\Yii::getAlias('@webroot'));
+//        debug(\Yii::getAlias('@web'));
+        
         $dataProvider = $this->categoryRepository->search(\Yii::$app->request->queryParams);
 
         return $this->render('index', [
@@ -93,19 +112,15 @@ class CategoryController extends Controller
     {
         $model = new Category();
         if (!empty(Yii::$app->request->post()))
-        {
-            $post = Yii::$app->request->post('Category');
-            
+        {            
             $model->load(Yii::$app->request->post());
             $model->author_id = \Yii::$app->user->id;
-            
-            $parent_id        = $post['parentId'];
 
-            if (empty($parent_id)){
-                $parent_id = 1;
+            if (empty($model->parent_id)){
+                $model->parent_id = 1;
             }
             
-            $parent = Category::findOne($parent_id);
+            $parent = Category::findOne($model->parent_id);
             $model->appendTo($parent);
             
             return $this->redirect(['view', 'id' => $model->id]);
@@ -124,35 +139,49 @@ class CategoryController extends Controller
      */
     public function actionUpdate($id)
     {
-        $model = $this->findModel($id);
-
-        if ( ! empty(Yii::$app->request->post('Category'))) 
-        {
-            $post            = Yii::$app->request->post('Category');
-
-            $model->name     = $post['name'];
-            $model->position = $post['position'];
-            $parent_id       = $post['parentId'];
-
-            if ($model->save())            
-            {
-                if (empty($parent_id))
-                {
-                    $parent_id = 1;
-                }
-                
-                if ($model->id != $parent_id)
-                {
-                    $parent = Category::findOne($parent_id);
-                    $model->appendTo($parent);
-                }
-
-                return $this->redirect(['view', 'id' => $model->id]);
+        
+        if (!$model = Category::find()->with('additionalPages')->with('additionalCategories')->where(['id' => $id])->one()) {
+            throw new NotFoundHttpException();
+        }
+        
+        $model->addCategories = $model->additionalCategories;
+        $model->addPages      = $model->additionalPages;
+        
+        $model->rltCategories = $model->relatedCategories;
+        $model->rltPages      = $model->relatedPages;
+        
+        $allCategories = yii\helpers\ArrayHelper::map($this->findCategories($id), 'id', 'name');
+        $allPages      = yii\helpers\ArrayHelper::map($this->findPages(), 'id', 'name');
+        
+        if($model->load((Yii::$app->request->post())) && $model->validate()){
+            
+            $result = false;
+            
+//            debug($model);
+//            exit;
+            
+            if($model->getDirtyAttributes(['parent_id']) && ($model->id != $model->parent_id)){
+                if(empty($model->parent_id)) $model->parent_id = 1;
+                $parent = Category::findOne($model->parent_id);
+                $result = $model->appendTo($parent);
+            }
+            else{
+                $result = $model->save();
+            }
+            
+            if($result){
+                \Yii::$app->session->setFlash('success', \Yii::t('nsblog', 'Success create'));
+                return $this->refresh();
+            }
+            else{
+                \Yii::$app->session->setFlash('error', \Yii::t('nsblog/error', 'Error create'));
             }
         }
 
         return $this->render('update', [
             'model' => $model,
+            'allCategories' => $allCategories,
+            'allPages' => $allPages,
         ]);
     }
 
@@ -172,6 +201,16 @@ class CategoryController extends Controller
             $model->delete();
 
         return $this->redirect(['index']);
+    }
+    
+    private function findCategories(int $id): ?array
+    {
+        return Category::find()->select(['id', 'name'])->andWhere(['NOT IN', 'id', [1, $id]])->all();
+    }
+    
+    private function findPages():?array
+    {
+        return \koperdog\yii2nsblog\models\Page::find()->all();
     }
 
     /**

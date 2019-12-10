@@ -21,6 +21,7 @@ use creocoder\nestedsets\NestedSetsBehavior;
  * @property int $lft
  * @property int $rgt
  * @property int $depth
+ * @property int $parent_id
  * @property int $position
  * @property int $access_read
  * @property int|null $domain_id
@@ -42,6 +43,13 @@ use creocoder\nestedsets\NestedSetsBehavior;
 class Category extends \yii\db\ActiveRecord
 {
     const OFFSET_ROOT = 1;
+    
+    public $addCategories;
+    public $addPages;
+    
+    public $rltCategories;
+    public $rltPages;
+    
     public $children;
     /**
      * {@inheritdoc}
@@ -80,12 +88,13 @@ class Category extends \yii\db\ActiveRecord
     {
         return [            
             [['name', 'url', 'author_id', 'status', 'h1', 'access_read'], 'required'],
-            [['author_id', 'status', 'tree', 'lft', 'rgt', 'depth', 'position', 'access_read', 'domain_id', 'lang_id', 'publish_at', 'created_at', 'updated_at'], 'integer'],
+            [['author_id', 'status', 'tree', 'lft', 'rgt', 'depth', 'position', 'access_read', 'domain_id', 'lang_id', 'publish_at', 'created_at', 'updated_at', 'parent_id'], 'integer'],
             [['position'], 'default', 'value' => 0],
             [['preview_text', 'full_text'], 'string'],
             [['name', 'url', 'h1', 'image'], 'string', 'max' => 255],
             [['domain_id'], 'exist', 'skipOnError' => true, 'targetClass' => \koperdog\yii2sitemanager\models\Domain::className(), 'targetAttribute' => ['domain_id' => 'id']],
             [['lang_id'], 'exist', 'skipOnError' => true, 'targetClass' => \koperdog\yii2sitemanager\models\Language::className(), 'targetAttribute' => ['lang_id' => 'id']],
+            [['addCategories', 'addPages', 'rltPages', 'rltCategories'], 'safe'],
         ];
     }
 
@@ -115,6 +124,8 @@ class Category extends \yii\db\ActiveRecord
             'publish_at' => Yii::t('app', 'Publish At'),
             'created_at' => Yii::t('app', 'Created At'),
             'updated_at' => Yii::t('app', 'Updated At'),
+            'addCategories' => Yii::t('app', 'Additional Categories'),
+            'addPages' => Yii::t('app', 'Additional Pages'),
         ];
     }
     
@@ -204,20 +215,87 @@ class Category extends \yii\db\ActiveRecord
         return $return;
     }
     
+    public function afterFind() {
+        parent::afterFind();
+    }
+    
+    public function afterSave($insert, $changedAttributes) {      
+        if($this->addCategories){
+            $this->saveAdditionalCategories();
+        }
+        
+        if($this->addPages){
+            $this->saveAdditionalPages();
+        }
+        
+        if($this->rltPages){
+            $this->saveRelatedPages();
+        }
+        
+        if($this->rltCategories){
+            $this->saveRelatedCategories();
+        }
+        
+        parent::afterSave($insert, $changedAttributes);
+    }
+    
+    private function saveAdditionalPages()
+    {
+        $current = \yii\helpers\ArrayHelper::getColumn($this->additionalPages, 'id');
+                
+        foreach(array_filter(array_diff($this->addPages, $current)) as $pageId){
+            $page = Page::findOne($pageId);
+            
+            $this->link('additionalPages', $page, ['type' => 0, 'source_type' => 0]);
+        }
+        
+    }
+    
+    private function saveAdditionalCategories()
+    {
+        $current = \yii\helpers\ArrayHelper::getColumn($this->additionalCategories, 'id');
+        
+        foreach(array_filter(array_diff($this->addCategories, $current)) as $catId){
+            $category = self::findOne($catId);
+            
+            $this->link('additionalCategories', $category, ['type' => 0, 'source_type' => 0]);
+        }
+        
+    }
+    
+    private function saveRelatedPages()
+    {
+        $current = \yii\helpers\ArrayHelper::getColumn($this->relatedPages, 'id');
+        
+        foreach(array_filter(array_diff($this->rltPages, $current)) as $pageId){
+            $page = Page::findOne($pageId);
+            
+            $this->link('relatedPages', $page, ['type' => 1, 'source_type' => 0]);
+        }
+        
+    }
+    
+    private function saveRelatedCategories()
+    {
+        $current = \yii\helpers\ArrayHelper::getColumn($this->relatedCategories, 'id');
+        
+        foreach(array_filter(array_diff($this->rltCategories, $current)) as $catId){
+            $category = self::findOne($catId);
+            
+            $this->link('relatedCategories', $category, ['type' => 1, 'source_type' => 0]);
+        }
+        
+    }
+    
     /**
      * @return \yii\db\ActiveQuery
      */
     public function getAdditionalCategories()
     {
-        return $this->hasMany(AdditionalCategory::className(), ['child_id' => 'id']);
-    }
-
-    /**
-     * @return \yii\db\ActiveQuery
-     */
-    public function getAdditionalCategories0()
-    {
-        return $this->hasMany(AdditionalCategory::className(), ['parent_id' => 'id']);
+        return $this->hasMany(self::className(), ['id' => 'category_id'])
+                ->viaTable(CategoryAssign::tableName(), ['resource_id' => 'id'], function(\yii\db\ActiveQuery $query){
+                    return $query->andWhere(['type' => 0, 'source_type' => 0]);
+                });
     }
 
     /**
@@ -225,15 +303,32 @@ class Category extends \yii\db\ActiveRecord
      */
     public function getAdditionalPages()
     {
-        return $this->hasMany(AdditionalPage::className(), ['parent_id' => 'id']);
+        return $this->hasMany(Page::className(), ['id' => 'page_id'])
+                ->viaTable(PageAssign::tableName(), ['resource_id' => 'id'], function(\yii\db\ActiveQuery $query){
+                    return $query->andWhere(['type' => 0, 'source_type' => 0]);
+                });
+    }
+    
+    /**
+     * @return \yii\db\ActiveQuery
+     */
+    public function getRelatedCategories()
+    {
+        return $this->hasMany(self::className(), ['id' => 'category_id'])
+                ->viaTable(CategoryAssign::tableName(), ['resource_id' => 'id'], function(\yii\db\ActiveQuery $query){
+                    return $query->andWhere(['type' => 1, 'source_type' => 0]);
+                });
     }
 
     /**
      * @return \yii\db\ActiveQuery
      */
-    public function getAdditionalPages0()
+    public function getRelatedPages()
     {
-        return $this->hasMany(AdditionalPage::className(), ['parent_id' => 'id']);
+        return $this->hasMany(self::className(), ['id' => 'category_id'])
+                ->viaTable(CategoryAssign::tableName(), ['resource_id' => 'id'], function(\yii\db\ActiveQuery $query){
+                    return $query->andWhere(['type' => 1, 'source_type' => 0]);
+                });
     }
 
     /**
@@ -257,15 +352,7 @@ class Category extends \yii\db\ActiveRecord
      */
     public function getMetaBlogCategories()
     {
-        return $this->hasMany(MetaBlogCategory::className(), ['src_id' => 'id']);
-    }
-
-    /**
-     * @return \yii\db\ActiveQuery
-     */
-    public function getRelatedCategories()
-    {
-        return $this->hasMany(RelatedCategory::className(), ['child_id' => 'id']);
+        return $this->hasOne(MetaBlogCategory::className(), ['src_id' => 'id']);
     }
 
     /**
