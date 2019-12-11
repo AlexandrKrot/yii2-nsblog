@@ -26,6 +26,11 @@ use creocoder\nestedsets\NestedSetsBehavior;
  * @property int $access_read
  * @property int|null $domain_id
  * @property int|null $lang_id
+ * @property string $title
+ * @property string $description
+ * @property string $keywords
+ * @property string $og:title
+ * @property string $og:description
  * @property int $publish_at
  * @property int $created_at
  * @property int $updated_at
@@ -219,28 +224,19 @@ class Category extends \yii\db\ActiveRecord
         parent::afterFind();
     }
     
-    public function afterSave($insert, $changedAttributes) {      
-        if($this->addCategories){
+    public function afterSave($insert, $changedAttributes) { 
             $this->saveAdditionalCategories();
-        }
-        
-        if($this->addPages){
             $this->saveAdditionalPages();
-        }
-        
-        if($this->rltPages){
             $this->saveRelatedPages();
-        }
-        
-        if($this->rltCategories){
             $this->saveRelatedCategories();
-        }
         
         parent::afterSave($insert, $changedAttributes);
     }
     
     private function saveAdditionalPages()
     {
+        $this->addPages = is_array($this->addPages)? $this->addPages : [];
+        
         $current = \yii\helpers\ArrayHelper::getColumn($this->additionalPages, 'id');
                 
         foreach(array_filter(array_diff($this->addPages, $current)) as $pageId){
@@ -249,10 +245,18 @@ class Category extends \yii\db\ActiveRecord
             $this->link('additionalPages', $page, ['type' => 0, 'source_type' => 0]);
         }
         
+        foreach(array_filter(array_diff($current, $this->addPages)) as $pageId){
+            $page = Page::findOne($pageId);
+            
+            $this->unlink('additionalPages', $page, true);
+        }
+        
     }
     
     private function saveAdditionalCategories()
     {
+        $this->addCategories = is_array($this->addCategories)? $this->addCategories : [];
+        
         $current = \yii\helpers\ArrayHelper::getColumn($this->additionalCategories, 'id');
         
         foreach(array_filter(array_diff($this->addCategories, $current)) as $catId){
@@ -261,10 +265,16 @@ class Category extends \yii\db\ActiveRecord
             $this->link('additionalCategories', $category, ['type' => 0, 'source_type' => 0]);
         }
         
+        foreach(array_filter(array_diff($current, $this->addCategories)) as $catId){
+            $category = self::findOne($catId);
+            
+            $this->unlink('additionalCategories', $category, true);
+        }
     }
     
     private function saveRelatedPages()
     {
+        $this->rltPages = is_array($this->rltPages)? $this->rltPages : [];
         $current = \yii\helpers\ArrayHelper::getColumn($this->relatedPages, 'id');
         
         foreach(array_filter(array_diff($this->rltPages, $current)) as $pageId){
@@ -272,11 +282,18 @@ class Category extends \yii\db\ActiveRecord
             
             $this->link('relatedPages', $page, ['type' => 1, 'source_type' => 0]);
         }
+
         
+        foreach(array_filter(array_diff($current, $this->rltPages)) as $pageId){
+            $page = Page::findOne($pageId);
+            
+            $this->unlink('relatedPages', $page, true);
+        }
     }
     
     private function saveRelatedCategories()
     {
+        $this->rltCategories = is_array($this->rltCategories)? $this->rltCategories : [];
         $current = \yii\helpers\ArrayHelper::getColumn($this->relatedCategories, 'id');
         
         foreach(array_filter(array_diff($this->rltCategories, $current)) as $catId){
@@ -285,6 +302,11 @@ class Category extends \yii\db\ActiveRecord
             $this->link('relatedCategories', $category, ['type' => 1, 'source_type' => 0]);
         }
         
+        foreach(array_filter(array_diff($current, $this->rltCategories)) as $catId){
+            $category = self::findOne($catId);
+            
+            $this->unlink('relatedCategories', $category, true);
+        }
     }
     
     /**
@@ -294,17 +316,6 @@ class Category extends \yii\db\ActiveRecord
     {
         return $this->hasMany(self::className(), ['id' => 'category_id'])
                 ->viaTable(CategoryAssign::tableName(), ['resource_id' => 'id'], function(\yii\db\ActiveQuery $query){
-                    return $query->andWhere(['type' => 0, 'source_type' => 0]);
-                });
-    }
-
-    /**
-     * @return \yii\db\ActiveQuery
-     */
-    public function getAdditionalPages()
-    {
-        return $this->hasMany(Page::className(), ['id' => 'page_id'])
-                ->viaTable(PageAssign::tableName(), ['resource_id' => 'id'], function(\yii\db\ActiveQuery $query){
                     return $query->andWhere(['type' => 0, 'source_type' => 0]);
                 });
     }
@@ -319,14 +330,26 @@ class Category extends \yii\db\ActiveRecord
                     return $query->andWhere(['type' => 1, 'source_type' => 0]);
                 });
     }
+    
+
+    /**
+     * @return \yii\db\ActiveQuery
+     */
+    public function getAdditionalPages()
+    {
+        return $this->hasMany(Page::className(), ['id' => 'page_id'])
+                ->viaTable(PageAssign::tableName(), ['resource_id' => 'id'], function(\yii\db\ActiveQuery $query){
+                    return $query->andWhere(['type' => 0, 'source_type' => 0]);
+                });
+    }
 
     /**
      * @return \yii\db\ActiveQuery
      */
     public function getRelatedPages()
     {
-        return $this->hasMany(self::className(), ['id' => 'category_id'])
-                ->viaTable(CategoryAssign::tableName(), ['resource_id' => 'id'], function(\yii\db\ActiveQuery $query){
+        return $this->hasMany(Page::className(), ['id' => 'page_id'])
+                ->viaTable(PageAssign::tableName(), ['resource_id' => 'id'], function(\yii\db\ActiveQuery $query){
                     return $query->andWhere(['type' => 1, 'source_type' => 0]);
                 });
     }

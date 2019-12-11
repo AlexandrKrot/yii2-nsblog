@@ -51,7 +51,8 @@ $this->registerJsVar('sortUrl', yii\helpers\Url::to(['sort']));
             ],
             [
                 'label' => 'author',
-                'attribute' => 'author.username',
+                'filter' => true,
+                'attribute' => 'author_id',
                 'format' => 'html',
                 'value' => function($model, $key, $index){
                     return Html::a($model->author->username, yii\helpers\Url::to(['update', 'id' => $model->id]));

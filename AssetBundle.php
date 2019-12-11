@@ -2,7 +2,7 @@
 
 /**
  * AssetBundle.php
- * @author koperdog<koperdog@gmail.com>
+ * @author koperdog<koperdog.dev@gmail.com>
  */
 
 namespace koperdog\yii2nsblog;
