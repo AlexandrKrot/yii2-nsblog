@@ -4,6 +4,7 @@ namespace koperdog\yii2nsblog\models;
 
 use Yii;
 use creocoder\nestedsets\NestedSetsBehavior;
+use yii\db\Expression;
 
 /**
  * This is the model class for table "{{%category}}".
@@ -27,10 +28,10 @@ use creocoder\nestedsets\NestedSetsBehavior;
  * @property int|null $domain_id
  * @property int|null $lang_id
  * @property string $title
- * @property string $description
  * @property string $keywords
- * @property string $og:title
- * @property string $og:description
+ * @property string $description
+ * @property string $og_title
+ * @property string $og_description
  * @property int $publish_at
  * @property int $created_at
  * @property int $updated_at
@@ -66,10 +67,14 @@ class Category extends \yii\db\ActiveRecord
     
     public function behaviors() {
         return [
-            \yii\behaviors\TimeStampBehavior::className(),
+            [
+                'class' => \yii\behaviors\TimeStampBehavior::className(),
+                'createdAtAttribute' => 'created_at',
+                'updatedAtAttribute' => 'updated_at',
+                'value' => date('Y-m-d H:i:s'),
+            ],
             'tree' => [
                 'class' => NestedSetsBehavior::className(),
-                //'treeAttribute' => 'tree',
             ],
         ];
     }
@@ -91,15 +96,17 @@ class Category extends \yii\db\ActiveRecord
      */
     public function rules()
     {
-        return [            
-            [['name', 'url', 'author_id', 'status', 'h1', 'access_read'], 'required'],
-            [['author_id', 'status', 'tree', 'lft', 'rgt', 'depth', 'position', 'access_read', 'domain_id', 'lang_id', 'publish_at', 'created_at', 'updated_at', 'parent_id'], 'integer'],
+        return [
+            [['name', 'url', 'author_id', 'status', 'h1', 'access_read', 'title', 'og_title'], 'required'],
+            [['author_id', 'status', 'tree', 'lft', 'rgt', 'depth', 'position', 'access_read', 'domain_id', 'lang_id','parent_id'], 'integer'],
             [['position'], 'default', 'value' => 0],
+            [['publish_at'], 'date', 'format' => 'php:Y-m-d H:i'],
+            [['publish_at'], 'default', 'value' => new Expression('NOW()')],
             [['preview_text', 'full_text'], 'string'],
-            [['name', 'url', 'h1', 'image'], 'string', 'max' => 255],
+            [['name', 'url', 'h1', 'image', 'title', 'og_title'], 'string', 'max' => 255],
             [['domain_id'], 'exist', 'skipOnError' => true, 'targetClass' => \koperdog\yii2sitemanager\models\Domain::className(), 'targetAttribute' => ['domain_id' => 'id']],
             [['lang_id'], 'exist', 'skipOnError' => true, 'targetClass' => \koperdog\yii2sitemanager\models\Language::className(), 'targetAttribute' => ['lang_id' => 'id']],
-            [['addCategories', 'addPages', 'rltPages', 'rltCategories'], 'safe'],
+            [['addCategories', 'addPages', 'rltPages', 'rltCategories', 'description', 'keywords', 'og_description'], 'safe'],
         ];
     }
 
@@ -110,27 +117,30 @@ class Category extends \yii\db\ActiveRecord
     {
         return [
             'id' => Yii::t('app', 'ID'),
-            'name' => Yii::t('app', 'Name'),
-            'url' => Yii::t('app', 'Url'),
+            'name' => Yii::t('nsblog', 'Name'),
+            'url' => Yii::t('nsblog', 'Url'),
             'author_id' => Yii::t('app', 'Author ID'),
-            'status' => Yii::t('app', 'Status'),
-            'h1' => Yii::t('app', 'H1'),
-            'image' => Yii::t('app', 'Image'),
-            'preview_text' => Yii::t('app', 'Preview Text'),
-            'full_text' => Yii::t('app', 'Full Text'),
-            'tree' => Yii::t('app', 'Tree'),
-            'lft' => Yii::t('app', 'Lft'),
-            'rgt' => Yii::t('app', 'Rgt'),
-            'depth' => Yii::t('app', 'Depth'),
-            'position' => Yii::t('app', 'Position'),
-            'access_read' => Yii::t('app', 'Access Read'),
-            'domain_id' => Yii::t('app', 'Domain ID'),
-            'lang_id' => Yii::t('app', 'Lang ID'),
-            'publish_at' => Yii::t('app', 'Publish At'),
-            'created_at' => Yii::t('app', 'Created At'),
-            'updated_at' => Yii::t('app', 'Updated At'),
-            'addCategories' => Yii::t('app', 'Additional Categories'),
-            'addPages' => Yii::t('app', 'Additional Pages'),
+            'status' => Yii::t('nsblog', 'Status'),
+            'h1' => Yii::t('nsblog', 'H1'),
+            'image' => Yii::t('nsblog', 'Image'),
+            'preview_text' => Yii::t('nsblog', 'Preview Text'),
+            'full_text' => Yii::t('nsblog', 'Full Text'),
+            'tree' => Yii::t('nsblog', 'Tree'),
+            'lft' => Yii::t('nsblog', 'Lft'),
+            'rgt' => Yii::t('nsblog', 'Rgt'),
+            'depth' => Yii::t('nsblog', 'Depth'),
+            'parent_id' => Yii::t('nsblog', 'Category'),
+            'position' => Yii::t('nsblog', 'Position'),
+            'access_read' => Yii::t('nsblog', 'Access Read'),
+            'domain_id' => Yii::t('nsblog', 'Domain ID'),
+            'lang_id' => Yii::t('nsblog', 'Lang ID'),
+            'publish_at' => Yii::t('nsblog', 'Publish At'),
+            'created_at' => Yii::t('nsblog', 'Created At'),
+            'updated_at' => Yii::t('nsblog', 'Updated At'),
+            'addCategories' => Yii::t('nsblog', 'Additional Categories'),
+            'addPages' => Yii::t('nsblog', 'Additional Pages'),
+            'rltCategories' => Yii::t('nsblog', 'Related Categories'),
+            'rltPages' => Yii::t('nsblog', 'Related Pages'),
         ];
     }
     

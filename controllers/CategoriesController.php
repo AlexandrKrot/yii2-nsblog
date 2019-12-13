@@ -110,24 +110,34 @@ class CategoriesController extends Controller
      */
     public function actionCreate()
     {
+        \Yii::$app->language = 'ru-RU';
         $model = new Category();
-        if (!empty(Yii::$app->request->post()))
-        {            
-            $model->load(Yii::$app->request->post());
-            $model->author_id = \Yii::$app->user->id;
-
-            if (empty($model->parent_id)){
-                $model->parent_id = 1;
-            }
+        
+        $allCategories = yii\helpers\ArrayHelper::map($this->findCategories(), 'id', 'name');
+        $allPages      = yii\helpers\ArrayHelper::map($this->findPages(), 'id', 'name');
+        
+        $model->author_id = \Yii::$app->user->id;
+        if ($model->load(Yii::$app->request->post()) && $model->validate())
+        {   
+            if(empty($model->parent_id)) $model->parent_id = 1;
             
             $parent = Category::findOne($model->parent_id);
-            $model->appendTo($parent);
             
-            return $this->redirect(['view', 'id' => $model->id]);
+            if($model->appendTo($parent)){
+                \Yii::$app->session->setFlash('success', \Yii::t('nsblog', 'Success create'));
+                return $this->redirect(['update', 'id' => $model->id]);
+            }
+            else{
+                \Yii::$app->session->setFlash('error', \Yii::t('nsblog/error', 'Error create'));
+            }
         }
+        
+//        debug($model);
 
         return $this->render('create', [
                 'model' => $model,
+                'allCategories' => $allCategories,
+                'allPages' => $allPages,
             ]);
     }
 
@@ -153,12 +163,9 @@ class CategoriesController extends Controller
         $allCategories = yii\helpers\ArrayHelper::map($this->findCategories($id), 'id', 'name');
         $allPages      = yii\helpers\ArrayHelper::map($this->findPages(), 'id', 'name');
         
-        if($model->load((Yii::$app->request->post())) && $model->validate()){
+        if($model->load(Yii::$app->request->post()) && $model->validate()){
             
             $result = false;
-            
-//            debug($model);
-//            exit;
             
             if($model->getDirtyAttributes(['parent_id']) && ($model->id != $model->parent_id)){
                 if(empty($model->parent_id)) $model->parent_id = 1;
@@ -170,12 +177,15 @@ class CategoriesController extends Controller
             }
             
             if($result){
-                \Yii::$app->session->setFlash('success', \Yii::t('nsblog', 'Success create'));
+                \Yii::$app->session->setFlash('success', \Yii::t('nsblog', 'Success update'));
                 return $this->refresh();
             }
             else{
-                \Yii::$app->session->setFlash('error', \Yii::t('nsblog/error', 'Error create'));
+                \Yii::$app->session->setFlash('error', \Yii::t('nsblog/error', 'Error update'));
             }
+        }
+        else if(Yii::$app->request->post() && !$model->validate()){
+            \Yii::$app->session->setFlash('error', \Yii::t('nsblog/error', 'Fill in required fields'));
         }
 
         return $this->render('update', [
@@ -203,9 +213,9 @@ class CategoriesController extends Controller
         return $this->redirect(['index']);
     }
     
-    private function findCategories(int $id): ?array
+    private function findCategories(int $id = null): ?array
     {
-        return Category::find()->select(['id', 'name'])->andWhere(['NOT IN', 'id', [1, $id]])->all();
+        return Category::find()->select(['id', 'name'])->andWhere(['NOT IN', 'id', 1])->andFilterWhere(['NOT IN', 'id', $id])->all();
     }
     
     private function findPages():?array
