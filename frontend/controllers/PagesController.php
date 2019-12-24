@@ -1,6 +1,6 @@
 <?php
 
-namespace koperdog\yii2nsblog\controllers;
+namespace koperdog\yii2nsblog\frontend\controllers;
 
 use Yii;
 use koperdog\yii2nsblog\models\Page;

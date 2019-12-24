@@ -1,6 +1,6 @@
 <?php
 
-namespace koperdog\yii2nsblog;
+namespace koperdog\yii2nsblog\backend;
 
 class Module extends \yii\base\Module
 {
@@ -9,7 +9,7 @@ class Module extends \yii\base\Module
     /**
      * {@inheritdoc}
      */
-    public $controllerNamespace = 'koperdog\yii2nsblog\controllers';
+    public $controllerNamespace = 'koperdog\yii2nsblog\backend\controllers';
 
     /**
      * {@inheritdoc}
@@ -27,7 +27,7 @@ class Module extends \yii\base\Module
             
             \Yii::$app->i18n->translations[self::MODULE_NAME . '*'] = [
                 'class'    => \yii\i18n\PhpMessageSource::class,
-                'basePath' => __DIR__ . '/messages',
+                'basePath' => dirname(__DIR__) . '/messages',
                 'fileMap'  => [
                     self::MODULE_NAME . "/error" => "error.php", 
                 ],

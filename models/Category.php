@@ -49,6 +49,7 @@ use yii\db\Expression;
 class Category extends \yii\db\ActiveRecord
 {
     const OFFSET_ROOT = 1;
+    const SOURCE_TYPE = 0;
     
     public $addCategories;
     public $addPages;
@@ -57,6 +58,7 @@ class Category extends \yii\db\ActiveRecord
     public $rltPages;
     
     public $children;
+    public $parents;
     /**
      * {@inheritdoc}
      */
@@ -97,15 +99,17 @@ class Category extends \yii\db\ActiveRecord
     public function rules()
     {
         return [
-            [['name', 'url', 'author_id', 'status', 'h1', 'access_read', 'title', 'og_title'], 'required'],
+            [['name', 'url', 'author_id', 'status', 'h1', 'publish_at','access_read', 'title', 'og_title'], 'required'],
             [['author_id', 'status', 'tree', 'lft', 'rgt', 'depth', 'position', 'access_read', 'domain_id', 'lang_id','parent_id'], 'integer'],
             [['position'], 'default', 'value' => 0],
-            [['publish_at'], 'date', 'format' => 'php:Y-m-d H:i'],
-            [['publish_at'], 'default', 'value' => new Expression('NOW()')],
-            [['preview_text', 'full_text'], 'string'],
-            [['name', 'url', 'h1', 'image', 'title', 'og_title'], 'string', 'max' => 255],
+            [['publish_at'], 'date', 'format' => 'php:Y-m-d H:i:s'],
+            [['publish_at'], 'default', 'value' => date('Y-m-d H:i:s')],
+            [['preview_text', 'full_text', 'og_description', 'description'], 'string'],
+            [['name', 'url', 'h1', 'image', 'title', 'og_title', 'keywords'], 'string', 'max' => 255],
             [['domain_id'], 'exist', 'skipOnError' => true, 'targetClass' => \koperdog\yii2sitemanager\models\Domain::className(), 'targetAttribute' => ['domain_id' => 'id']],
             [['lang_id'], 'exist', 'skipOnError' => true, 'targetClass' => \koperdog\yii2sitemanager\models\Language::className(), 'targetAttribute' => ['lang_id' => 'id']],
+            ['url', 'checkUrl'],
+            [['author_id'], 'default', 'value' => \Yii::$app->user->id],
             [['addCategories', 'addPages', 'rltPages', 'rltCategories', 'description', 'keywords', 'og_description'], 'safe'],
         ];
     }
@@ -230,8 +234,14 @@ class Category extends \yii\db\ActiveRecord
         return $return;
     }
     
-    public function afterFind() {
-        parent::afterFind();
+    public function checkUrl($attribute, $params)
+    {       
+        if(
+            self::find()->where(['url' => $this->url, 'parent_id' => $this->parent_id])->andWhere(['!=', 'id', $this->id])->exists() || 
+            Page::find()->where(['category_id' => $this->parent_id, 'url' => $this->url])->exists()
+        ){
+            $this->addError($attribute, \Yii::t('nsblog/error', 'This Url already exists'));
+        }
     }
     
     public function afterSave($insert, $changedAttributes) { 
@@ -252,7 +262,7 @@ class Category extends \yii\db\ActiveRecord
         foreach(array_filter(array_diff($this->addPages, $current)) as $pageId){
             $page = Page::findOne($pageId);
             
-            $this->link('additionalPages', $page, ['type' => 0, 'source_type' => 0]);
+            $this->link('additionalPages', $page, ['type' => 0, 'source_type' => self::SOURCE_TYPE]);
         }
         
         foreach(array_filter(array_diff($current, $this->addPages)) as $pageId){
@@ -272,7 +282,7 @@ class Category extends \yii\db\ActiveRecord
         foreach(array_filter(array_diff($this->addCategories, $current)) as $catId){
             $category = self::findOne($catId);
             
-            $this->link('additionalCategories', $category, ['type' => 0, 'source_type' => 0]);
+            $this->link('additionalCategories', $category, ['type' => 0, 'source_type' => self::SOURCE_TYPE]);
         }
         
         foreach(array_filter(array_diff($current, $this->addCategories)) as $catId){
@@ -290,7 +300,7 @@ class Category extends \yii\db\ActiveRecord
         foreach(array_filter(array_diff($this->rltPages, $current)) as $pageId){
             $page = Page::findOne($pageId);
             
-            $this->link('relatedPages', $page, ['type' => 1, 'source_type' => 0]);
+            $this->link('relatedPages', $page, ['type' => 1, 'source_type' => self::SOURCE_TYPE]);
         }
 
         
@@ -309,7 +319,7 @@ class Category extends \yii\db\ActiveRecord
         foreach(array_filter(array_diff($this->rltCategories, $current)) as $catId){
             $category = self::findOne($catId);
             
-            $this->link('relatedCategories', $category, ['type' => 1, 'source_type' => 0]);
+            $this->link('relatedCategories', $category, ['type' => 1, 'source_type' => self::SOURCE_TYPE]);
         }
         
         foreach(array_filter(array_diff($current, $this->rltCategories)) as $catId){
@@ -326,7 +336,7 @@ class Category extends \yii\db\ActiveRecord
     {
         return $this->hasMany(self::className(), ['id' => 'category_id'])
                 ->viaTable(CategoryAssign::tableName(), ['resource_id' => 'id'], function(\yii\db\ActiveQuery $query){
-                    return $query->andWhere(['type' => 0, 'source_type' => 0]);
+                    return $query->andWhere(['type' => 0, 'source_type' => self::SOURCE_TYPE]);
                 });
     }
     
@@ -337,7 +347,7 @@ class Category extends \yii\db\ActiveRecord
     {
         return $this->hasMany(self::className(), ['id' => 'category_id'])
                 ->viaTable(CategoryAssign::tableName(), ['resource_id' => 'id'], function(\yii\db\ActiveQuery $query){
-                    return $query->andWhere(['type' => 1, 'source_type' => 0]);
+                    return $query->andWhere(['type' => 1, 'source_type' => self::SOURCE_TYPE]);
                 });
     }
     
@@ -349,7 +359,7 @@ class Category extends \yii\db\ActiveRecord
     {
         return $this->hasMany(Page::className(), ['id' => 'page_id'])
                 ->viaTable(PageAssign::tableName(), ['resource_id' => 'id'], function(\yii\db\ActiveQuery $query){
-                    return $query->andWhere(['type' => 0, 'source_type' => 0]);
+                    return $query->andWhere(['type' => 0, 'source_type' => self::SOURCE_TYPE]);
                 });
     }
 
@@ -360,7 +370,7 @@ class Category extends \yii\db\ActiveRecord
     {
         return $this->hasMany(Page::className(), ['id' => 'page_id'])
                 ->viaTable(PageAssign::tableName(), ['resource_id' => 'id'], function(\yii\db\ActiveQuery $query){
-                    return $query->andWhere(['type' => 1, 'source_type' => 0]);
+                    return $query->andWhere(['type' => 1, 'source_type' => self::SOURCE_TYPE]);
                 });
     }
 

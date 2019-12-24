@@ -2,7 +2,7 @@
 /**
  * @var $this yii\web\View
  * @var form yii\widgets\ActiveForm;
- * @var $model koperdog\yii2nsblog\models\Category
+ * @var $model koperdog\yii2nsblog\models\Page
  */
 ?>
 
@@ -26,14 +26,14 @@
 	'options' => ['placeholder' => \Yii::t('nsblog', 'Select date'), 'autocomplete' => 'off'],
     'removeButton' => false,
 	'pluginOptions' => [
-		'autoclose' => true
+		'autoclose' => true,
+        'format' => 'yyyy-mm-dd hh:ii:ss'
 	]
 ]); ?>
 </div>
-<?php debug($model->publish_at);?>
 
-<?= $form->field($model, 'parent_id')->dropDownList(
-    koperdog\yii2nsblog\models\Category::getTree($model->id), 
+<?= $form->field($model, 'category_id')->dropDownList(
+    koperdog\yii2nsblog\models\Category::getTree(), 
     ['prompt' => Yii::t('nsblog','No Category'), 'class' => 'form-control']
 );?>
 

@@ -7,4 +7,5 @@ return [
     "The requested page does not exist." => "Запрашиваемой страницы не существует.",
     "This field is required" => "Обязательно к заполнению",
     "Fill in required fields" => "Заполните обязательные поля",
+    "This Url already exists" => "Url занят",
 ];

@@ -1,13 +1,17 @@
 <?php
 
-namespace koperdog\yii2nsblog\controllers;
+namespace koperdog\yii2nsblog\backend\controllers;
 
 use Yii;
 use koperdog\yii2nsblog\models\Category;
-use koperdog\yii2nsblog\models\CategorySearch;
 use yii\web\Controller;
 use yii\web\NotFoundHttpException;
 use yii\filters\VerbFilter;
+use yii\helpers\ArrayHelper;
+use koperdog\yii2nsblog\repositories\{
+    PageRepository,
+    CategoryRepository
+};
 
 /**
  * CategoryController implements the CRUD actions for Category model.
@@ -31,28 +35,12 @@ class CategoriesController extends Controller
         ];
     }
     
-    /**
-     * 
-     * {@inheritdoc}
-     */
-//    public function actions()
-//    {
-//        return [
-//            'images-get' => [
-//                'class' => 'vova07\imperavi\actions\GetImagesAction',
-//                'url' => 'http://my-site.com/images/', // Directory URL address, where files are stored.
-//                'path' => '@alias/to/my/path', // Or absolute path to directory where files are stored.
-//                'options' => ['only' => ['*.jpg', '*.jpeg', '*.png', '*.gif', '*.ico']], // These options are by default.
-//            ],
-//        ];
-//    }
-    
     public function __construct
     (
         $id, 
         $module, 
         \koperdog\yii2nsblog\useCases\CategoryService $categoryService,
-        \koperdog\yii2nsblog\repositories\CategoryRepository $categoryRepository,
+        CategoryRepository $categoryRepository,
         $config = []
     )
     {
@@ -78,15 +66,11 @@ class CategoriesController extends Controller
      */
     public function actionIndex()
     {   
-//        debug(\Yii::getAlias('@webroot'));
-//        debug(\Yii::getAlias('@web'));
-        
         $dataProvider = $this->categoryRepository->search(\Yii::$app->request->queryParams);
 
         return $this->render('index', [
             'searchForm'     => $this->categoryRepository->getSearchModel(),
             'dataProvider'   => $dataProvider,
-            'categoriesTree' => $categoriesTree,
         ]);
     }
 
@@ -110,20 +94,14 @@ class CategoriesController extends Controller
      */
     public function actionCreate()
     {
-        \Yii::$app->language = 'ru-RU';
         $model = new Category();
         
-        $allCategories = yii\helpers\ArrayHelper::map($this->findCategories(), 'id', 'name');
-        $allPages      = yii\helpers\ArrayHelper::map($this->findPages(), 'id', 'name');
+        $allCategories = $this->findCategories();
+        $allPages      = $this->findPages();
         
-        $model->author_id = \Yii::$app->user->id;
         if ($model->load(Yii::$app->request->post()) && $model->validate())
         {   
-            if(empty($model->parent_id)) $model->parent_id = 1;
-            
-            $parent = Category::findOne($model->parent_id);
-            
-            if($model->appendTo($parent)){
+            if($this->categoryService->create($model)){
                 \Yii::$app->session->setFlash('success', \Yii::t('nsblog', 'Success create'));
                 return $this->redirect(['update', 'id' => $model->id]);
             }
@@ -132,8 +110,6 @@ class CategoriesController extends Controller
             }
         }
         
-//        debug($model);
-
         return $this->render('create', [
                 'model' => $model,
                 'allCategories' => $allCategories,
@@ -149,34 +125,13 @@ class CategoriesController extends Controller
      */
     public function actionUpdate($id)
     {
+        $model = $this->findModel($id);
         
-        if (!$model = Category::find()->with('additionalPages')->with('additionalCategories')->where(['id' => $id])->one()) {
-            throw new NotFoundHttpException();
-        }
-        
-        $model->addCategories = $model->additionalCategories;
-        $model->addPages      = $model->additionalPages;
-        
-        $model->rltCategories = $model->relatedCategories;
-        $model->rltPages      = $model->relatedPages;
-        
-        $allCategories = yii\helpers\ArrayHelper::map($this->findCategories($id), 'id', 'name');
-        $allPages      = yii\helpers\ArrayHelper::map($this->findPages(), 'id', 'name');
+        $allCategories = $this->findCategories($id);
+        $allPages      = $this->findPages();
         
         if($model->load(Yii::$app->request->post()) && $model->validate()){
-            
-            $result = false;
-            
-            if($model->getDirtyAttributes(['parent_id']) && ($model->id != $model->parent_id)){
-                if(empty($model->parent_id)) $model->parent_id = 1;
-                $parent = Category::findOne($model->parent_id);
-                $result = $model->appendTo($parent);
-            }
-            else{
-                $result = $model->save();
-            }
-            
-            if($result){
+            if($this->categoryService->save($model)){
                 \Yii::$app->session->setFlash('success', \Yii::t('nsblog', 'Success update'));
                 return $this->refresh();
             }
@@ -204,23 +159,18 @@ class CategoriesController extends Controller
     public function actionDelete($id)
     {
         $model = $this->findModel($id);
-
-        if ($model->isRoot())
-            $model->deleteWithChildren();
-        else 
-            $model->delete();
-
+        $this->categoryRepository->delete($model);
         return $this->redirect(['index']);
     }
     
-    private function findCategories(int $id = null): ?array
+    private function findCategories($id = null): ?array
     {
-        return Category::find()->select(['id', 'name'])->andWhere(['NOT IN', 'id', 1])->andFilterWhere(['NOT IN', 'id', $id])->all();
+        return ArrayHelper::map(CategoryRepository::getAll($id), 'id', 'name');
     }
     
-    private function findPages():?array
+    private function findPages($id = null):?array
     {
-        return \koperdog\yii2nsblog\models\Page::find()->all();
+        return ArrayHelper::map(PageRepository::getAll($id), 'id', 'name');
     }
 
     /**
@@ -232,10 +182,12 @@ class CategoriesController extends Controller
      */
     protected function findModel($id)
     {
-        if (($model = Category::findOne($id)) !== null) {
-            return $model;
+        try{
+            $model = $this->categoryService->get($id);
+        } catch (\DomainException $e){
+            throw new NotFoundHttpException(Yii::t('nsblog', 'The requested page does not exist.'));
         }
-
-        throw new NotFoundHttpException(Yii::t('nsblog', 'The requested page does not exist.'));
+        
+        return $model;
     }
 }

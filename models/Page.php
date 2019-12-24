@@ -9,6 +9,7 @@ use Yii;
  *
  * @property int $id
  * @property string $name
+ * @property string h1
  * @property string $url
  * @property int $author_id
  * @property int $category_id
@@ -18,9 +19,16 @@ use Yii;
  * @property int $position
  * @property int|null $domain_id
  * @property int|null $lang_id
+ * @property int $status
+ * @property int $access_read
  * @property int $publish_at
  * @property int $created_at
  * @property int $updated_at
+ * @property string $title
+ * @property string $keywords
+ * @property string $description
+ * @property string $og_title
+ * @property string $og_description
  *
  * @property AdditionalPage[] $additionalPages
  * @property AdditionalPage[] $additionalPages0
@@ -30,6 +38,14 @@ use Yii;
  */
 class Page extends \yii\db\ActiveRecord
 {
+    const SOURCE_TYPE = 1;
+    
+    public $addCategories;
+    public $addPages;
+    
+    public $rltCategories;
+    public $rltPages;
+    
     /**
      * {@inheritdoc}
      */
@@ -44,12 +60,17 @@ class Page extends \yii\db\ActiveRecord
     public function rules()
     {
         return [
-            [['name', 'url', 'image', 'publish_at',], 'required'],
-            [['author_id', 'position', 'domain_id', 'lang_id', 'publish_at', 'created_at', 'updated_at', 'category_id'], 'integer'],
-            [['preview_text', 'full_text'], 'string'],
-            [['name', 'url', 'image'], 'string', 'max' => 255],
+            [['name', 'url', 'image', 'publish_at', 'access_read', 'title', 'og_title', 'h1', 'status'], 'required'],
+            [['author_id', 'position', 'domain_id', 'lang_id', 'category_id', 'access_read', 'status'], 'integer'],
+            [['preview_text', 'full_text', 'description', 'og_description'], 'string'],
+            [['name', 'url', 'image', 'h1', 'title', 'og_title', 'keywords'], 'string', 'max' => 255],
+            [['publish_at'], 'date', 'format' => 'php:Y-m-d H:i:s'],
+            [['publish_at'], 'default', 'value' => date('Y-m-d H:i:s')],
+            [['position'], 'default', 'value' => 0],
+            [['author_id'], 'default', 'value' => \Yii::$app->user->id],
             [['domain_id'], 'exist', 'skipOnError' => true, 'targetClass' => \koperdog\yii2sitemanager\models\Domain::className(), 'targetAttribute' => ['domain_id' => 'id']],
             [['lang_id'], 'exist', 'skipOnError' => true, 'targetClass' => \koperdog\yii2sitemanager\models\Language::className(), 'targetAttribute' => ['lang_id' => 'id']],
+            [['url'], 'checkUrl']
         ];
     }
     
@@ -60,11 +81,11 @@ class Page extends \yii\db\ActiveRecord
     {
         return [
             [
-                'class' => \yii\behaviors\TimestampBehavior::className(),
+                'class' => \yii\behaviors\TimeStampBehavior::className(),
                 'createdAtAttribute' => 'created_at',
                 'updatedAtAttribute' => 'updated_at',
-                'value' => new \yii\db\Expression('NOW()'),
-            ],
+                'value' => date('Y-m-d H:i:s'),
+            ]
         ];
     }
 
@@ -90,44 +111,144 @@ class Page extends \yii\db\ActiveRecord
             'addPages'   => Yii::t('app', 'Additional Pages'),
         ];
     }
+    
+    public function checkUrl($attribute, $param)
+    {
+        if(
+            self::find()->where(['category_id' => $this->category_id, 'url' => $this->url])->andWhere(['!=', 'id', $this->id])->exists() ||
+            Category::find()->where(['parent_id' => $this->category_id, 'url' => $this->url])->exists()
+        ){
+            $this->addError($attribute, \Yii::t('nsblog/error', 'This Url already exists'));
+        }
+    }
+    
+    public function afterSave($insert, $changedAttributes) { 
+            $this->saveAdditionalCategories();
+            $this->saveAdditionalPages();
+            $this->saveRelatedPages();
+            $this->saveRelatedCategories();
+        
+        parent::afterSave($insert, $changedAttributes);
+    }
+    
+    private function saveAdditionalPages()
+    {
+        $this->addPages = is_array($this->addPages)? $this->addPages : [];
+        
+        $current = \yii\helpers\ArrayHelper::getColumn($this->additionalPages, 'id');
+                
+        foreach(array_filter(array_diff($this->addPages, $current)) as $pageId){
+            $page = Page::findOne($pageId);
+            
+            $this->link('additionalPages', $page, ['type' => 0, 'source_type' => self::SOURCE_TYPE]);
+        }
+        
+        foreach(array_filter(array_diff($current, $this->addPages)) as $pageId){
+            $page = Page::findOne($pageId);
+            
+            $this->unlink('additionalPages', $page, true);
+        }
+        
+    }
+    
+    private function saveAdditionalCategories()
+    {
+        $this->addCategories = is_array($this->addCategories)? $this->addCategories : [];
+        
+        $current = \yii\helpers\ArrayHelper::getColumn($this->additionalCategories, 'id');
+        
+        foreach(array_filter(array_diff($this->addCategories, $current)) as $catId){
+            $category = self::findOne($catId);
+            
+            $this->link('additionalCategories', $category, ['type' => 0, 'source_type' => self::SOURCE_TYPE]);
+        }
+        
+        foreach(array_filter(array_diff($current, $this->addCategories)) as $catId){
+            $category = self::findOne($catId);
+            
+            $this->unlink('additionalCategories', $category, true);
+        }
+    }
+    
+    private function saveRelatedPages()
+    {
+        $this->rltPages = is_array($this->rltPages)? $this->rltPages : [];
+        $current = \yii\helpers\ArrayHelper::getColumn($this->relatedPages, 'id');
+        
+        foreach(array_filter(array_diff($this->rltPages, $current)) as $pageId){
+            $page = Page::findOne($pageId);
+            
+            $this->link('relatedPages', $page, ['type' => 1, 'source_type' => self::SOURCE_TYPE]);
+        }
+
+        
+        foreach(array_filter(array_diff($current, $this->rltPages)) as $pageId){
+            $page = Page::findOne($pageId);
+            
+            $this->unlink('relatedPages', $page, true);
+        }
+    }
+    
+    private function saveRelatedCategories()
+    {
+        $this->rltCategories = is_array($this->rltCategories)? $this->rltCategories : [];
+        $current = \yii\helpers\ArrayHelper::getColumn($this->relatedCategories, 'id');
+        
+        foreach(array_filter(array_diff($this->rltCategories, $current)) as $catId){
+            $category = self::findOne($catId);
+            
+            $this->link('relatedCategories', $category, ['type' => 1, 'source_type' => self::SOURCE_TYPE]);
+        }
+        
+        foreach(array_filter(array_diff($current, $this->rltCategories)) as $catId){
+            $category = self::findOne($catId);
+            
+            $this->unlink('relatedCategories', $category, true);
+        }
+    }
+
+    /**
+     * @return \yii\db\ActiveQuery
+     */
+    public function getAdditionalCategories()
+    {
+        return $this->hasMany(self::className(), ['id' => 'category_id'])
+                ->viaTable(CategoryAssign::tableName(), ['resource_id' => 'id'], function(\yii\db\ActiveQuery $query){
+                    return $query->andWhere(['type' => 0, 'source_type' => self::SOURCE_TYPE]);
+                });
+    }
+    
+    /**
+     * @return \yii\db\ActiveQuery
+     */
+    public function getRelatedCategories()
+    {
+        return $this->hasMany(self::className(), ['id' => 'category_id'])
+                ->viaTable(CategoryAssign::tableName(), ['resource_id' => 'id'], function(\yii\db\ActiveQuery $query){
+                    return $query->andWhere(['type' => 1, 'source_type' => self::SOURCE_TYPE]);
+                });
+    }
+    
 
     /**
      * @return \yii\db\ActiveQuery
      */
     public function getAdditionalPages()
     {
-        return $this->hasMany(AdditionalPage::className(), ['child_id' => 'id']);
+        return $this->hasMany(Page::className(), ['id' => 'page_id'])
+                ->viaTable(PageAssign::tableName(), ['resource_id' => 'id'], function(\yii\db\ActiveQuery $query){
+                    return $query->andWhere(['type' => 0, 'source_type' => self::SOURCE_TYPE]);
+                });
     }
 
     /**
      * @return \yii\db\ActiveQuery
      */
-    public function getAdditionalPages0()
+    public function getRelatedPages()
     {
-        return $this->hasMany(AdditionalPage::className(), ['child_id' => 'id']);
-    }
-
-    /**
-     * @return \yii\db\ActiveQuery
-     */
-    public function getMetaBlogPages()
-    {
-        return $this->hasMany(MetaBlogPage::className(), ['src_id' => 'id']);
-    }
-
-    /**
-     * @return \yii\db\ActiveQuery
-     */
-    public function getDomain()
-    {
-        return $this->hasOne(Domain::className(), ['id' => 'domain_id']);
-    }
-
-    /**
-     * @return \yii\db\ActiveQuery
-     */
-    public function getLang()
-    {
-        return $this->hasOne(Language::className(), ['id' => 'lang_id']);
+        return $this->hasMany(Page::className(), ['id' => 'page_id'])
+                ->viaTable(PageAssign::tableName(), ['resource_id' => 'id'], function(\yii\db\ActiveQuery $query){
+                    return $query->andWhere(['type' => 1, 'source_type' => self::SOURCE_TYPE]);
+                });
     }
 }

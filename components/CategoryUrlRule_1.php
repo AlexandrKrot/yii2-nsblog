@@ -13,15 +13,17 @@ class CategoryUrlRule extends BaseObject implements UrlRuleInterface
     
     private $repository;
         
-    public function init()
+    public function __construct(\koperdog\yii2nsblog\repositories\CategoryRepository $repos,$config = [])
     {
-        $this->initManagers();
+        parent::__construct($config);
+        $this->repository = $repos;
+//        $this->initManagers();
     }
     
     public function createUrl($manager, $route, $params)
     {
         if ($route === 'blog/category') {
-            return $this->category->createUrl($params);
+//            return $this->category->createUrl($params);
         }
         
         return false;
@@ -29,13 +31,16 @@ class CategoryUrlRule extends BaseObject implements UrlRuleInterface
 
     public function parseRequest($manager, $request)
     {
-        \Yii::$app->cache->flush();
+        
+        
+        
         if (preg_match('#^' . $this->prefix . '/?(.*[a-z])/?$#is', $request->pathInfo, $matches)) {
             $path = $matches['1'];
             
-            if($result = $this->category->parseRequest($path)){
-                return $result;
-            }
+//            if($result = $this->category->parseRequest($path)){
+//                return $result;
+//            }
+            return false;
         }
         
         return false;
