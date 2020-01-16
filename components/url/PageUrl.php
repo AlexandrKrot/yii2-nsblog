@@ -10,6 +10,7 @@ namespace koperdog\yii2nsblog\components\url;
 
 use koperdog\yii2nsblog\repositories\PageRepository;
 use yii\helpers\ArrayHelper;
+use koperdog\yii2nsblog\models\Page;
 use koperdog\yii2nsblog\models\Category;
 
 /**
@@ -31,10 +32,19 @@ class PageUrl extends Url {
         $this->repository = $repository;
     }
     
-    protected function getPath($category): string
+    protected function getPath($page): string
     {
-        $sections = ArrayHelper::getColumn($category->parents()->andWhere(['>=', 'depth', Category::OFFSET_ROOT])->all(), 'url');
-        $sections[] = $category->url;
-        return implode('/', $sections);
+        if(!$page->category_id){
+            return $page->url;
+        }
+        
+        if($category = Category::findOne($page->category_id)){
+            $sections = ArrayHelper::getColumn($category->parents()->andWhere(['>=', 'depth', Category::OFFSET_ROOT])->all(), 'url');
+            $sections[] = $category->url;
+            $sections[] = $page->url;
+            return implode('/', $sections);
+        }
+        
+        return false;
     }
 }

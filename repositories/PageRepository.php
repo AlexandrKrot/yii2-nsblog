@@ -3,6 +3,7 @@
 namespace koperdog\yii2nsblog\repositories;
 use koperdog\yii2nsblog\models\{
     Page,
+    Category,
     PageSearch
 };
 
@@ -59,5 +60,28 @@ class PageRepository {
                 ->andWhere(['NOT IN', 'id', 1])
                 ->andFilterWhere(['NOT IN', 'id', $exclude])
                 ->all();
+    }
+    
+    public function getByPath(string $path): ?Page
+    {
+        $sections = explode('/', $path);
+        
+        $page = array_pop($sections);
+        
+        if(count($sections)){
+            $category = Category::find()
+                    ->where(['url' => array_shift($sections), 'depth' => Category::OFFSET_ROOT])
+                    ->one();
+
+            $offset = Category::OFFSET_ROOT + 1; // +1 because array shift from sections
+
+            foreach($sections as $key => $section){
+                if($category){
+                    $category = $category->children(1)->where(['url' => $section, 'depth' => $key + $offset])->one();
+                }
+            }
+        }
+        
+        return Page::find()->where(['url' => $page, 'category_id' => $category->id])->one();
     }
 }

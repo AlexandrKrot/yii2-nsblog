@@ -6,6 +6,7 @@ use yii\widgets\ActiveForm;
 /* @var $this yii\web\View */
 /* @var $model koperdog\yii2nsblog\models\Category */
 /* @var $form yii\widgets\ActiveForm */
+$this->registerJsVar('error_message', \Yii::t('nsblog/error', 'The form contains errors'));
 ?>
 
 <div class="blog-edit">
@@ -63,6 +64,21 @@ use yii\widgets\ActiveForm;
     #url-autofill > span{
         margin-right:10px;
     }
+    #section_tabs button.error:after{
+        content:'!';
+        display: inline-flex;
+        justify-content: center;
+        align-items: center;
+        background:#dd4b39;
+        color:#fff;
+        margin-left:5px;
+        text-align:center;
+        width: 16px;
+        height:16px;
+        font-size:11px;
+        font-weight:bold;
+        border-radius:50%;
+    }
 </style>
 
 <?php $this->registerJs(
@@ -97,23 +113,32 @@ $('#url-autofill').click(function(){
     $('#field-url input').val(nameToUrl(name));
 });
 
-var errorAlertTemplate = '<div id="w0-error" class="alert-danger alert fade in"><i class="icon fa fa-ban"></i>{text}</div>';
-
 $('#blog-form').on("beforeValidate", function (event) {
     $('#form-errors').html('');
 });
 
 $('#blog-form').on("afterValidate", function (event, messages, errorAttributes) {
+    console.log(errorAttributes);
+    $('#section_tabs button').each(function(){
+        let context = $(this);
+        let fn = function(){
+            if(context.hasClass('error') && !$('#'+context.data('section')).find('.has-error').length){
+                context.removeClass('error');
+            }
+        };
+        setTimeout(fn);
+    });
+    
+   
     if(!errorAttributes.length){
         $('#form-errors').html('');
     }
     else{
-        for(let i in messages){
-            if(messages[i].length){
-                $('#form-errors').append(errorAlertTemplate.replace('{text}', messages[i]));
-                console.log('net');
-            }
+        for(let attribute of errorAttributes){
+            let section = $(attribute.input).closest('.section').attr('id');
+            $('#section_tabs button[data-section="'+section+'"]').addClass('error');
         }
+        $('#form-errors').html('<div class="alert-danger alert fade in"><i class="icon fa fa-ban"></i>'+error_message+'</div>');
     }
 });
 JS

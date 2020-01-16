@@ -5,11 +5,11 @@ namespace koperdog\yii2nsblog\components;
 use yii\base\BaseObject;
 use yii\web\UrlRuleInterface;
 
-class CategoryUrlRule extends BaseObject implements UrlRuleInterface
+class PageUrlRule extends BaseObject implements UrlRuleInterface
 {
     public $prefix = '';
     
-    private $category;
+    private $page;
     
     private $repository;
         
@@ -21,7 +21,7 @@ class CategoryUrlRule extends BaseObject implements UrlRuleInterface
     public function createUrl($manager, $route, $params)
     {
         if ($route === 'blog/category') {
-            return $this->category->createUrl($params);
+            return $this->page->createUrl($params);
         }
         
         return false;
@@ -33,7 +33,7 @@ class CategoryUrlRule extends BaseObject implements UrlRuleInterface
         if (preg_match('#^' . $this->prefix . '/?(.*[a-z0-9\-\_])/?$#is', $request->pathInfo, $matches)) {
             $path = $matches['1'];
             
-            if($result = $this->category->parseRequest($path)){
+            if($result = $this->page->parseRequest($path)){
                 return $result;
             }
         }
@@ -43,6 +43,6 @@ class CategoryUrlRule extends BaseObject implements UrlRuleInterface
     
     private function initManager()
     {
-        $this->category = \Yii::createObject(['class' => url\CategoryUrl::className(), 'owner' => $this]);
+        $this->page = \Yii::createObject(['class' => url\PageUrl::className(), 'owner' => $this]);
     }
 }

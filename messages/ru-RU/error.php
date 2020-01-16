@@ -8,4 +8,5 @@ return [
     "This field is required" => "Обязательно к заполнению",
     "Fill in required fields" => "Заполните обязательные поля",
     "This Url already exists" => "Url занят",
+    "The form contains errors" => "В форме содержатся ошибки",
 ];
