@@ -57,7 +57,6 @@ class PageRepository {
     {
         return Page::find()
                 ->select(['id', 'name'])
-                ->andWhere(['NOT IN', 'id', 1])
                 ->andFilterWhere(['NOT IN', 'id', $exclude])
                 ->all();
     }

@@ -1,8 +1,8 @@
 <?php
 
 use yii\helpers\Html;
-use yii\grid\GridView;
 use yii\widgets\Pjax;
+
 /* @var $this yii\web\View */
 /* @var $searchModel koperdog\yii2nsblog\models\CategorySearch */
 /* @var $dataProvider yii\data\ActiveDataProvider */
@@ -22,8 +22,12 @@ $this->registerJsVar('sortUrl', yii\helpers\Url::to(['sort']));
         <?= Html::a(Yii::t('nsblog', 'Create Category'), ['create'], ['class' => 'btn btn-success']) ?>
     </p>
     <?php Pjax::begin(); ?>
+    
+    <?php
+//    debug($dataProvider->getModels());
+    ?>
 
-    <?=    koperdog\yii2treeview\TreeView::widget([
+    <?=    \koperdog\yii2treeview\TreeView::widget([
         'dataProvider' => $dataProvider,
         'filterModel'  => $searchForm,
         'id' => 'grid',
@@ -37,7 +41,7 @@ $this->registerJsVar('sortUrl', yii\helpers\Url::to(['sort']));
                 'attribute' => 'name',
                 'format' => 'html',
                 'value' => function($model, $key, $index){
-                    $anchor = str_repeat(' — ', $model->depth - 1).$model->name;
+                    $anchor = str_repeat(' — ', $model->depth - 1).$model->categoryValue->name;
                     return Html::a($anchor, yii\helpers\Url::to(['update', 'id' => $model->id]));
                 }
             ],

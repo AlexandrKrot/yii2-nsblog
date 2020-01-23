@@ -3,7 +3,8 @@
 namespace koperdog\yii2nsblog\repositories;
 use koperdog\yii2nsblog\models\{
     CategorySearch,
-    Category    
+    Category,
+    CategoryValueQuery
 };
 
 /**
@@ -23,7 +24,14 @@ class CategoryRepository {
     
     public function get(int $id): Category
     {
-        if(!$model = Category::findOne($id)){
+        $model = Category::find()
+            ->joinWith(['categoryValue' => function($query) use ($id) {
+                return CategoryValueQuery::get($id);
+            }])
+            ->andWhere(['category.id' => $id])
+            ->one();
+            
+        if(!$model){
             throw new \DomainException("Category with id: {$id} was not found");
         }
         
@@ -46,6 +54,15 @@ class CategoryRepository {
         return $model;
     }
     
+    public function getParentNode(Category $model): Categor
+    {
+        if(!$model = $model->parents(1)->one()){
+            throw new \DomainException("Category have not parents");
+        }
+        
+        return $model;
+    }
+    
     public function search(array $params = []): \yii\data\BaseDataProvider
     {
         $this->searchModel = new CategorySearch();
@@ -54,13 +71,18 @@ class CategoryRepository {
         return $dataProvider;
     }
     
-    public function save(Category $model): bool
+    public function save($model): bool
     {
         if(!$model->save()){
             throw new \RuntimeException('Error saving model');
         }
         
         return true;
+    }
+    
+    public function link(string $name, $target, $model): void
+    {
+        $model->link($name, $target);
     }
     
     public function appendTo(Category $model): bool
@@ -75,7 +97,7 @@ class CategoryRepository {
     
     public function setPosition(Category $model, Category $parentNode): bool
     {
-        if(!$model->appendTo($parentNode)){
+        if(!$model->appendTo($parentNode, false)){
             throw new \RuntimeException('Error saving model');
         }
         
@@ -114,9 +136,12 @@ class CategoryRepository {
     public static function getAll($exclude = null): ?array
     {
         return Category::find()
-                ->select(['id', 'name'])
-                ->andWhere(['NOT IN', 'id', 1])
-                ->andFilterWhere(['NOT IN', 'id', $exclude])
-                ->all();
+            ->joinWith(['categoryValue' => function($query){
+                return CategoryValueQuery::getAll();;
+            }])
+            ->select(['category.id', 'category_value.name'])
+            ->andWhere(['NOT IN', 'category.id', 1])
+            ->andFilterWhere(['NOT IN', 'category.id', $exclude])
+            ->all();
     }
 }

@@ -10,14 +10,9 @@ use yii\db\Expression;
  * This is the model class for table "{{%category}}".
  *
  * @property int $id
- * @property string $name
  * @property string $url
  * @property int $author_id
  * @property int $status
- * @property string $h1
- * @property string $image
- * @property string|null $preview_text
- * @property string|null $full_text
  * @property int $tree
  * @property int $lft
  * @property int $rgt
@@ -25,13 +20,6 @@ use yii\db\Expression;
  * @property int $parent_id
  * @property int $position
  * @property int $access_read
- * @property int|null $domain_id
- * @property int|null $lang_id
- * @property string $title
- * @property string $keywords
- * @property string $description
- * @property string $og_title
- * @property string $og_description
  * @property int $publish_at
  * @property int $created_at
  * @property int $updated_at
@@ -99,18 +87,15 @@ class Category extends \yii\db\ActiveRecord
     public function rules()
     {
         return [
-            [['name', 'url', 'author_id', 'status', 'h1', 'publish_at','access_read', 'title', 'og_title'], 'required'],
-            [['author_id', 'status', 'tree', 'lft', 'rgt', 'depth', 'position', 'access_read', 'domain_id', 'lang_id','parent_id'], 'integer'],
+            [['url', 'author_id', 'status', 'publish_at', 'access_read'], 'required'],
+            [['author_id', 'status', 'tree', 'lft', 'rgt', 'depth', 'position', 'access_read', 'parent_id'], 'integer'],
             [['position'], 'default', 'value' => 0],
             [['publish_at'], 'date', 'format' => 'php:Y-m-d H:i:s'],
             [['publish_at'], 'default', 'value' => date('Y-m-d H:i:s')],
-            [['preview_text', 'full_text', 'og_description', 'description'], 'string'],
-            [['name', 'url', 'h1', 'image', 'title', 'og_title', 'keywords'], 'string', 'max' => 255],
-            [['domain_id'], 'exist', 'skipOnError' => true, 'targetClass' => \koperdog\yii2sitemanager\models\Domain::className(), 'targetAttribute' => ['domain_id' => 'id']],
-            [['lang_id'], 'exist', 'skipOnError' => true, 'targetClass' => \koperdog\yii2sitemanager\models\Language::className(), 'targetAttribute' => ['lang_id' => 'id']],
+            [['url'], 'string', 'max' => 255],
             ['url', 'checkUrl'],
             [['author_id'], 'default', 'value' => \Yii::$app->user->id],
-            [['addCategories', 'addPages', 'rltPages', 'rltCategories', 'description', 'keywords', 'og_description'], 'safe'],
+            [['addCategories', 'addPages', 'rltPages', 'rltCategories'], 'safe'],
         ];
     }
 
@@ -121,14 +106,9 @@ class Category extends \yii\db\ActiveRecord
     {
         return [
             'id' => Yii::t('app', 'ID'),
-            'name' => Yii::t('nsblog', 'Name'),
             'url' => Yii::t('nsblog', 'Url'),
             'author_id' => Yii::t('app', 'Author ID'),
             'status' => Yii::t('nsblog', 'Status'),
-            'h1' => Yii::t('nsblog', 'H1'),
-            'image' => Yii::t('nsblog', 'Image'),
-            'preview_text' => Yii::t('nsblog', 'Preview Text'),
-            'full_text' => Yii::t('nsblog', 'Full Text'),
             'tree' => Yii::t('nsblog', 'Tree'),
             'lft' => Yii::t('nsblog', 'Lft'),
             'rgt' => Yii::t('nsblog', 'Rgt'),
@@ -136,8 +116,6 @@ class Category extends \yii\db\ActiveRecord
             'parent_id' => Yii::t('nsblog', 'Category'),
             'position' => Yii::t('nsblog', 'Position'),
             'access_read' => Yii::t('nsblog', 'Access Read'),
-            'domain_id' => Yii::t('nsblog', 'Domain ID'),
-            'lang_id' => Yii::t('nsblog', 'Lang ID'),
             'publish_at' => Yii::t('nsblog', 'Publish At'),
             'created_at' => Yii::t('nsblog', 'Created At'),
             'updated_at' => Yii::t('nsblog', 'Updated At'),
@@ -182,17 +160,23 @@ class Category extends \yii\db\ActiveRecord
                 self::findOne($node_id)->children()->column(),
                 [$node_id]
                 );
-
-        $rows = self::find()->
-            select('id, name, depth')->
-            andWhere(['!=', 'id', 1])->    
-            andWhere(['NOT IN', 'id', $children])->
-            orderBy('tree, lft, position')->
-            all();
-
+        
+        $rows = Category::find()
+            ->joinWith(['categoryValue' => function($query){
+                return CategoryValueQuery::getAll();;
+            }])
+            ->select(['category.id', 'tree', 'depth', 'lft', 'position', 'category_value.name'])
+            ->andWhere(['NOT IN', 'category.id', 1])
+            ->andWhere(['NOT IN', 'category.id', $children])
+            ->orderBy('tree, lft, position')
+            ->all();
+        
+//        debug($rows);
+//        exit;
+            
         $return = [];
         foreach ($rows as $row)
-            $return[$row->id] = str_repeat('-', $row->depth - self::OFFSET_ROOT) . ' ' . $row->name;
+            $return[$row->id] = str_repeat('-', $row->depth - self::OFFSET_ROOT) . ' ' . $row->categoryValue->name;
 
         return $return;
     }
@@ -396,6 +380,14 @@ class Category extends \yii\db\ActiveRecord
     public function getMetaBlogCategories()
     {
         return $this->hasOne(MetaBlogCategory::className(), ['src_id' => 'id']);
+    }
+    
+    /**
+     * @return \yii\db\ActiveQuery
+     */
+    public function getCategoryValue()
+    {
+        return $this->hasOne(CategoryValue::className(), ['category_id' => 'id']);
     }
 
     /**

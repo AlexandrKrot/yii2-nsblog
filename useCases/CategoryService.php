@@ -3,7 +3,11 @@
 namespace koperdog\yii2nsblog\useCases;
 
 use \koperdog\yii2nsblog\repositories\CategoryRepository;
-use \koperdog\yii2nsblog\models\Category;
+use \koperdog\yii2nsblog\models\{
+    forms\CategoryForm,
+    Category,
+    CategoryValue
+};
 
 /**
  * Description of CategoryService
@@ -48,6 +52,9 @@ class CategoryService {
             else{
                 $this->repository->save($model);
             }
+            
+            $this->repository->save($model->categoryValue);
+            
             $transaction->commit();
         } catch(\Exception $e){
             $transaction->rollBack();
@@ -57,22 +64,29 @@ class CategoryService {
         return true;
     }
     
-    public function create(Category $form): bool
+    public function create(CategoryForm $form): ?Category
     {
         $category = new Category();
         $category->attributes = $form->attributes;
         if(empty($category->parent_id)) $category->parent_id = 1;
         
-        $transaction = \Yii::$app->db->beginTransaction();
-        try{
-            $this->repository->appendTo($category);
-            $transaction->commit();
-        } catch(\Exception $e){
-            $transaction->rollBack();
-            return false;
-        }
+        $categoryValue = new CategoryValue();
+        $categoryValue->attributes = $form->attributes;
         
-        return true;
+        $categoryValue->domain_id   = null;
+        $categoryValue->language_id = null;
+                
+//        $transaction = \Yii::$app->db->beginTransaction();
+//        try{
+            $this->repository->appendTo($category);
+            $this->repository->link('category', $category, $categoryValue);
+//            $transaction->commit();
+//        } catch(\Exception $e){
+//            $transaction->rollBack();
+//            return null;
+//        }
+        
+        return $category;
     }
     
     public function sort(array $data): int
@@ -86,6 +100,7 @@ class CategoryService {
             foreach($data as $index => $value){
                 $category = $this->repository->get($value);
                 $category->position = (int)$index;
+                                
                 $this->repository->setPosition($category, $parentNode);
                 $result++;
             }

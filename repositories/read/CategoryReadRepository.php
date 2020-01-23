@@ -13,27 +13,45 @@ use koperdog\yii2nsblog\models\{
  */
 class CategoryReadRepository {
     
-    public function get(int $id): ?Category
+    public static function get(int $id): ?array
     {
         return Category::find()->where(['id' => $id])->asArray()->one();
     }
     
-    public static function getByPath(string $path): ?Category
+    public static function getSubcategories(int $id, int $level = 1): ?array
     {
-        $sections = explode('/', $path);
+        $category = Category::findOne($id);
         
-        $category = Category::find()
-                ->where(['url' => array_shift($sections), 'depth' => Category::OFFSET_ROOT])
-                ->one();
-        
-        $offset = Category::OFFSET_ROOT + 1; // +1 because array shift from sections
-        
-        foreach($sections as $key => $section){
-            if($category){
-                $category = $category->children(1)->where(['url' => $section, 'depth' => $key + $offset])->one();
-            }
+        if($category){
+            return $category->children($level)->asArray()->all();
         }
         
-        return $category;
+        return null;
+    }
+    
+    public static function getSubcategoriesAsTree(int $id, int $level = 1): ?array
+    {
+        return self::asTree(self::getSubcategories($id, $level));
+    }
+    
+    public static function getAll(): ?array
+    {
+        return Category::find()->asArray()->all();
+    }
+        
+    private static function asTree(array $models): ?array
+    {
+        $tree = [];
+
+        foreach ($models as $n) {
+            $node = &$tree;
+
+            for ($depth = $models[0]->depth; $n->depth > $depth; $depth++) {
+                $node = &$node[count($node) - 1]->children;
+            }
+            $n->children = null;
+            $node[] = $n;
+        }
+        return $tree;
     }
 }

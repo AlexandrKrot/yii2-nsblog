@@ -7,7 +7,7 @@
 ?>
 
 <div class="row">
-<?= $form->field($model, 'name', ['options' => ['class' => 'col-md-4', 'id' => 'field-name']])->textInput(['maxlength' => true]) ?>
+<?= $form->field($model->categoryValue, 'name', ['options' => ['class' => 'col-md-4', 'id' => 'field-name']])->textInput(['maxlength' => true]) ?>
 <?= $form->field($model, 'url', [
     'options' => ['class' => 'col-md-4', 'id' => 'field-url'], 
     'template' => "{label}\n"
@@ -37,11 +37,11 @@
     ['prompt' => Yii::t('nsblog','No Category'), 'class' => 'form-control']
 );?>
 
-<?= $form->field($model, 'h1')->textInput(['maxlength' => true]) ?>
+<?= $form->field($model, 'categoryValue[h1]')->textInput(['maxlength' => true]) ?>
 
-<?= $form->field($model, 'image')->textInput(['maxlength' => true]) ?>
+<?= $form->field($model, 'categoryValue[image]')->textInput(['maxlength' => true]) ?>
 
-<?= $form->field($model, 'preview_text')->widget(vova07\imperavi\Widget::className(), [
+<?= $form->field($model, 'categoryValue[preview_text]')->widget(vova07\imperavi\Widget::className(), [
     'settings' => [
         'lang' => 'ru',
         'minHeight' => 200,
@@ -67,7 +67,7 @@
     ],
 ]); ?>
 
-<?= $form->field($model, 'full_text')->widget(vova07\imperavi\Widget::className(), [
+<?= $form->field($model, 'categoryValue[full_text]')->widget(vova07\imperavi\Widget::className(), [
     'settings' => [
         'lang' => 'ru',
         'minHeight' => 200,
