@@ -12,6 +12,9 @@ use koperdog\yii2nsblog\repositories\{
     PageRepository,
     CategoryRepository
 };
+use \koperdog\yii2nsblog\models\forms\CategoryForm;
+use \koperdog\yii2sitemanager\components\Domains;
+use \koperdog\yii2sitemanager\components\Languages;
 
 /**
  * CategoryController implements the CRUD actions for Category model.
@@ -66,7 +69,10 @@ class CategoriesController extends Controller
      */
     public function actionIndex()
     {   
-        $dataProvider = $this->categoryRepository->search(\Yii::$app->request->queryParams);
+        $domain_id   = Domains::getEditorDomainId();
+        $language_id = Languages::getEditorLangaugeId();
+                
+        $dataProvider = $this->categoryRepository->search(\Yii::$app->request->queryParams, $domain_id, $language_id);
         
         return $this->render('index', [
             'searchForm'     => $this->categoryRepository->getSearchModel(),
@@ -82,8 +88,11 @@ class CategoriesController extends Controller
      */
     public function actionView($id)
     {
+        $domain_id   = Domains::getEditorDomainId();
+        $language_id = Languages::getEditorLangaugeId();
+        
         return $this->render('view', [
-            'model' => $this->findModel($id),
+            'model' => $this->findModel($id, $domain_id, $langauge_id),
         ]);
     }
 
@@ -94,12 +103,15 @@ class CategoriesController extends Controller
      */
     public function actionCreate()
     {
-        $form = new \koperdog\yii2nsblog\models\forms\CategoryForm();
+        $form = new CategoryForm();
         
         $allCategories = $this->findCategories();
         $allPages      = $this->findPages();
         
-        if ($form->load(Yii::$app->request->post()) && $form->validate())
+        if (
+            $form->load(Yii::$app->request->post()) && $form->validate()
+            && $form->categoryContent->load(Yii::$app->request->post()) && $form->categoryContent->validate()
+        )
         {   
             if($model = $this->categoryService->create($form)){
                 \Yii::$app->session->setFlash('success', \Yii::t('nsblog', 'Success create'));
@@ -125,16 +137,21 @@ class CategoriesController extends Controller
      */
     public function actionUpdate($id)
     {
-        $model = $this->findModel($id);
+        $domain_id   = Domains::getEditorDomainId();
+        $language_id = Languages::getEditorLangaugeId();
+        
+        $model = $this->findModel($id, $domain_id, $language_id);
+        
+        $form  = new CategoryForm();
+        $form->loadModel($model);
         
         $allCategories = $this->findCategories($id);
         $allPages      = $this->findPages();
         
         if(
-            $model->load(Yii::$app->request->post()) && $model->validate()
-            && $model->categoryValue->load(Yii::$app->request->post()) && $model->categoryValue->validate()){
-            
-            if($this->categoryService->save($model)){
+            $form->load(Yii::$app->request->post()) && $form->validate()
+            && $form->categoryContent->load(Yii::$app->request->post()) && $form->categoryContent->validate()){
+            if($this->categoryService->save($model, $form, $domain_id, $language_id)){
                 \Yii::$app->session->setFlash('success', \Yii::t('nsblog', 'Success update'));
                 return $this->refresh();
             }
@@ -142,14 +159,14 @@ class CategoriesController extends Controller
                 \Yii::$app->session->setFlash('error', \Yii::t('nsblog/error', 'Error update'));
             }
         }
-        else if(Yii::$app->request->post() && (!$model->validate() || !$model->categoryValue->validate())){
+        else if(Yii::$app->request->post() && (!$form->validate() || !$form->categoryContent->validate())){
             \Yii::$app->session->setFlash('error', \Yii::t('nsblog/error', 'Fill in required fields'));
         }
         
         
 
         return $this->render('update', [
-            'model' => $model,
+            'model' => $form,
             'allCategories' => $allCategories,
             'allPages' => $allPages,
         ]);
@@ -170,7 +187,7 @@ class CategoriesController extends Controller
     
     private function findCategories($id = null): ?array
     {
-        return ArrayHelper::map(CategoryRepository::getAll($id), 'id', 'categoryValue.name');
+        return ArrayHelper::map(CategoryRepository::getAll($id), 'id', 'categoryContent.name');
     }
     
     private function findPages($id = null):?array
@@ -185,10 +202,10 @@ class CategoriesController extends Controller
      * @return Category the loaded model
      * @throws NotFoundHttpException if the model cannot be found
      */
-    protected function findModel($id)
+    protected function findModel($id, $domain_id = null, $language_id = null)
     {
         try{
-            $model = $this->categoryRepository->get($id);
+            $model = $this->categoryRepository->get($id, $domain_id, $language_id);
         } catch (\DomainException $e){
             throw new NotFoundHttpException(Yii::t('nsblog', 'The requested page does not exist.'));
         }

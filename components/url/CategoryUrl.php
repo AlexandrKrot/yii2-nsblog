@@ -37,4 +37,9 @@ class CategoryUrl extends Url {
         $sections[] = $category->url;
         return implode('/', $sections);
     }
+    
+    protected function isActive(Category $model): bool
+    {
+        return (bool)($model->status == Category::STATUS['PUBLISHED'] && strtotime($model->publish_at) < time());
+    }
 }

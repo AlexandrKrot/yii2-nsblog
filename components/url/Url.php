@@ -55,7 +55,9 @@ abstract class Url extends \yii\base\BaseObject{
             if (!$model = $this->repository->getByPath($path)) {
                 return ['id' => null, 'path' => null];
             }
-
+            
+            if(!$this->isActive($model)) return false;
+            
             return ['id' => $model->id];
         });
 

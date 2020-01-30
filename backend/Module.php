@@ -18,6 +18,7 @@ class Module extends \yii\base\Module
     {
         parent::init();
         
+        \Yii::configure($this, require __DIR__ . '/config.php');
         $this->registerTranslations();
     }
     

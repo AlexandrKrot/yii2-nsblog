@@ -19,48 +19,57 @@ class CategoryForm extends Model
     public $author_id;
     public $parent_id;
     public $publish_at;
-    
-    public $name;
-    public $category_id;
-    public $h1;
-    public $image;
-    public $preview_text;
-    public $full_text;
+
     public $addCategories;
     public $addPages;
     public $rltCategories;
     public $rltPages;
-    public $access_read;
     
-    public $language_id;
-    public $domain_id;
+    public $access_read;
+    public $records_per_page;
+    public $sort;
+    
+    public $main_template;
+    public $mainTemplateName;
+    public $mainTemplateApplySub;
+    
+    public $category_template;
+    public $categoryTemplateName;
+    public $categoryTemplateApplySub;
+    
+    public $page_template;
+    public $pageTemplateName;
+    public $pageTemplateApplySub;
 
-    public $title;
-    public $keywords;
-    public $description;
-    public $og_title;
-    public $og_description;
+    public $categoryContent;
 
+    public function __construct($config = array()) {
+        parent::__construct($config);
+        
+        $this->categoryContent = new CategoryContentForm();
+    }
+    
     /**
      * {@inheritdoc}
      */
     public function rules()
     {
         return [
-            [['name', 'h1', 'image', 'preview_text', 'full_text', 'title', 'og_title', 'keywords', 'description', 'og_description'], 'required'],
-            [['category_id', 'language_id'], 'integer'],
-            [['preview_text', 'full_text', 'description', 'og_description'], 'string'],
-            [['name', 'h1', 'image', 'title', 'og_title', 'keywords'], 'string', 'max' => 255],
-            [['category_id'], 'exist', 'skipOnError' => true, 'targetClass' => Category::className(), 'targetAttribute' => ['category_id' => 'id']],
-            
-            [['url', 'status', 'publish_at', 'access_read'], 'required'],
-            [['author_id', 'status', 'access_read', 'parent_id'], 'integer'],
+            [['url', 'author_id', 'status', 'publish_at', 'access_read'], 'required'],
+            [['author_id', 'status', 'access_read', 'parent_id', 'records_per_page'], 'integer'],
+            [['mainTemplateApplySub', 'categoryTemplateApplySub', 'pageTemplateApplySub'], 'boolean'],
+            [['status'], 'default', 'value' => Category::STATUS['DRAFT']],
+            [['records_per_page'], 'default', 'value' => 15],
             [['publish_at'], 'date', 'format' => 'php:Y-m-d H:i:s'],
             [['publish_at'], 'default', 'value' => date('Y-m-d H:i:s')],
-            [['url'], 'string', 'max' => 255],
+            [['url', 'sort', 'main_template', 'category_template', 'page_template'], 'string', 'max' => 255],
+            [['mainTemplateName', 'categoryTemplateName', 'pageTemplateName'], 'string', 'max' => 150],
+            [['mainTemplateName', 'categoryTemplateName', 'pageTemplateName'], 'default', 'value' => ''],
             ['url', 'checkUrl'],
+            [['url'], 'match', 'pattern' => '/^[\w-]+$/', 
+                'message' => 'The field can contain only latin letters, numbers, and signs "_", "-"'],
             [['author_id'], 'default', 'value' => \Yii::$app->user->id],
-            [['addCategories', 'addPages', 'rltPages', 'rltCategories'], 'safe'],
+            [['addCategories', 'addPages', 'rltPages', 'rltCategories', 'main_template', 'category_template', 'page_template'], 'safe'],
         ];
     }
     
@@ -93,5 +102,38 @@ class CategoryForm extends Model
             'description' => \Yii::t('app', 'Description'),
             'og_description' => \Yii::t('app', 'Og Description'),
         ];
+    }
+    
+    public function loadModel(Model $model) 
+    {
+        $this->attributes = $model->attributes;
+        $this->categoryContent->attributes = $model->categoryContent->attributes;
+        
+        $mainTmp = json_decode($this->main_template, true);
+        if(array_key_exists('file', $mainTmp) && array_key_exists('apply', $mainTmp)){
+            $this->mainTemplateName     = $mainTmp['file'];
+            $this->mainTemplateApplySub = $mainTmp['apply'];
+        }
+        
+        $categoryTmp = json_decode($this->category_template, true);
+        if(array_key_exists('file', $categoryTmp) && array_key_exists('apply', $categoryTmp)){
+            $this->categoryTemplateName     = $categoryTmp['file'];
+            $this->categoryTemplateApplySub = $categoryTmp['apply'];
+        }
+        
+        $pageTmp = json_decode($this->page_template, true);
+        if(array_key_exists('file', $pageTmp) && array_key_exists('apply', $pageTmp)){
+            $this->pageTemplateName = $pageTmp['file'];
+            $this->pageTemplateApplySub = $pageTmp['apply'];
+        }
+    }
+    
+    public function beforeValidate()
+    {        
+        $this->main_template     = json_encode(['file' => $this->mainTemplateName, 'apply' => $this->mainTemplateApplySub]);
+        $this->category_template = json_encode(['file' => $this->categoryTemplateName, 'apply' => $this->categoryTemplateApplySub]);
+        $this->page_template     = json_encode(['file' => $this->pageTemplateName, 'apply' => $this->pageTemplateApplySub]);
+        
+        return parent::beforeValidate();
     }
 }

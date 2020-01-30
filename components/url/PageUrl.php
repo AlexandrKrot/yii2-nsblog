@@ -47,4 +47,9 @@ class PageUrl extends Url {
         
         return false;
     }
+    
+    private function isActive(Page $model): bool
+    {
+        return (bool)($model->status == Page::STATUS['PUBLISHED'] && strtotime($model->publish_at) < time());
+    }
 }

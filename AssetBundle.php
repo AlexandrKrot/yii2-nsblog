@@ -21,14 +21,14 @@ class AssetBundle extends \yii\web\AssetBundle
      * @inherit
      */
     public $css = [
-        'css/style.css',
+        'css/blog.css',
     ];
     
     /**
      * @inherit
      */
     public $js = [
-        'js/script.js',
+        'js/blog.js',
     ];
     
     /**

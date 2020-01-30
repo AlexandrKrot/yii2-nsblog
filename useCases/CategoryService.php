@@ -6,7 +6,7 @@ use \koperdog\yii2nsblog\repositories\CategoryRepository;
 use \koperdog\yii2nsblog\models\{
     forms\CategoryForm,
     Category,
-    CategoryValue
+    CategoryContent
 };
 
 /**
@@ -41,8 +41,11 @@ class CategoryService {
         return $model;
     }
     
-    public function save(Category $model): bool
+    public function save(Category $model, \yii\base\Model $form, $domain_id = null, $language_id = null): bool
     {
+        $model->load($form->attributes, '');
+        $model->categoryContent->load($form->categoryContent->attributes, ''); 
+        
         $transaction = \Yii::$app->db->beginTransaction();
         try{
             if($model->getDirtyAttributes(['parent_id']) && ($model->id != $model->parent_id)){
@@ -53,7 +56,7 @@ class CategoryService {
                 $this->repository->save($model);
             }
             
-            $this->repository->save($model->categoryValue);
+            $this->repository->saveContent($model->categoryContent, $domain_id, $language_id);
             
             $transaction->commit();
         } catch(\Exception $e){
@@ -68,23 +71,23 @@ class CategoryService {
     {
         $category = new Category();
         $category->attributes = $form->attributes;
-        if(empty($category->parent_id)) $category->parent_id = 1;
+        if(empty($form->parent_id)) $category->parent_id = 1;
         
-        $categoryValue = new CategoryValue();
-        $categoryValue->attributes = $form->attributes;
+        $categoryContent = new CategoryContent();
+        $categoryContent->attributes = $form->categoryContent->attributes;
         
-        $categoryValue->domain_id   = null;
-        $categoryValue->language_id = null;
+        $categoryContent->domain_id   = null;
+        $categoryContent->language_id = null;
                 
-//        $transaction = \Yii::$app->db->beginTransaction();
-//        try{
+        $transaction = \Yii::$app->db->beginTransaction();
+        try{
             $this->repository->appendTo($category);
-            $this->repository->link('category', $category, $categoryValue);
-//            $transaction->commit();
-//        } catch(\Exception $e){
-//            $transaction->rollBack();
-//            return null;
-//        }
+            $this->repository->link('category', $category, $categoryContent);
+            $transaction->commit();
+        } catch(\Exception $e){
+            $transaction->rollBack();
+            return null;
+        }
         
         return $category;
     }

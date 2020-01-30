@@ -4,16 +4,16 @@ namespace koperdog\yii2nsblog\models;
 
 use yii\base\Model;
 use yii\data\ActiveDataProvider;
-use koperdog\yii2nsblog\models\CategoryValue;
+use koperdog\yii2nsblog\models\CategoryContent;
 
 /**
  * CategorySearch represents the model behind the search form of `koperdog\yii2nsblog\models\Category`.
  */
-class CategorySearch extends CategoryValue
+class CategorySearch extends CategoryContent
 {
     public $url;
     public $status;
-    public $author_id;
+    public $author_name;
     
     /**
      * {@inheritdoc}
@@ -21,7 +21,7 @@ class CategorySearch extends CategoryValue
     public function rules()
     {
         return [
-            [['url', 'status', 'author', 'name', 'h1', 'image', 'preview_text', 'full_text'], 'safe'],
+            [['url', 'status', 'author_name', 'name', 'h1', 'image', 'preview_text', 'full_text'], 'safe'],
         ];
     }
 
@@ -41,20 +41,21 @@ class CategorySearch extends CategoryValue
      *
      * @return ActiveDataProvider
      */
-    public function search($params)
+    public function search($params, $domain_id = null, $language_id = null)
     {   
         $this->load($params);
         
+        $name = $this->name;
+        
         $query = Category::find()
-            ->joinWith(['categoryValue' => function($query){
-                return CategoryValueQuery::getAll()
-                        ->andFilterWhere(['like', 'name', $this->name]);
+            ->joinWith(['categoryContent' => function($query) use ($domain_id, $language_id, $name){
+                $in = \yii\helpers\ArrayHelper::getColumn(CategoryContentQuery::getAllId($domain_id, $language_id)->asArray()->all(), 'id');
+                $query->andWhere(['IN','category_content.id', $in]);
             }])
+            ->andFilterWhere(['like', 'category_content.name', $name])
             ->andWhere(['!=', 'category.id', 1]);
-                
-                
-        $query->andFilterWhere(['like', 'category_value.name', $this->name]);
-
+            
+            
         $dataProvider = new ActiveDataProvider([
             'query' => $query,
             'pagination' => [
@@ -66,13 +67,17 @@ class CategorySearch extends CategoryValue
             return $dataProvider;
         }
         
-        $query->andFilterWhere(['like', 'url', $this->url]);
+        $query->andFilterWhere(['like', 'category.url', $this->url]);
+        $query->andFilterWhere(['category.status' => $this->status]);
+        $query->andFilterWhere(['like', 'user.username', $this->author_name]);
         
-        $query->with('author');
+        $query->joinWith('author');
        
-        $query->orderBy(['tree' => SORT_ASC, 'lft' => SORT_ASC]);
+        $query->orderBy(['category.tree' => SORT_ASC, 'category.lft' => SORT_ASC]);
         
 
+//        debug($query->createCommand()->rawSql);
+        
         return $dataProvider;
     }
 }

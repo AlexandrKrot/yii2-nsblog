@@ -19,7 +19,8 @@
         "kartik-v/yii2-widget-datetimepicker": "dev-master",
         "kartik-v/yii2-widget-datetimepicker": "*",
         "creocoder/yii2-nested-sets": "^0.9.0",
-        "koperdog/yii2-treeview": "1.0.0"
+        "koperdog/yii2-treeview": "1.0.0",
+        "mihaildev/yii2-elfinder": "*"
     },
     "autoload": {
         "psr-4": {

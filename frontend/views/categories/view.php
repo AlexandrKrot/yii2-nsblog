@@ -6,7 +6,7 @@ use yii\widgets\DetailView;
 /* @var $this yii\web\View */
 /* @var $model koperdog\yii2nsblog\models\Category */
 
-$this->title = $model->name;
+$this->title = $model->categoryContent->name;
 
 foreach($model->parents as $key => $category){
     $this->params['breadcrumbs'][] = ['url' => ['/blog/category', 'id' => $category->id], 'label' => $category->name];
@@ -34,22 +34,22 @@ $this->params['breadcrumbs'][] = $this->title;
         'model' => $model,
         'attributes' => [
             'id',
-            'name',
+            'categoryContent.name',
             'url:url',
             'author_id',
             'status',
-            'h1',
-            'image',
-            'preview_text:ntext',
-            'full_text:ntext',
+            'categoryContent.h1',
+            'categoryContent.image',
+            'categoryContent.preview_text:ntext',
+            'categoryContent.full_text:ntext',
             'tree',
             'lft',
             'rgt',
             'depth',
             'position',
             'access_read',
-            'domain_id',
-            'lang_id',
+            'categoryContent.domain_id',
+            'categoryContent.language_id',
             'publish_at',
             'created_at',
             'updated_at',

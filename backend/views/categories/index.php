@@ -2,6 +2,7 @@
 
 use yii\helpers\Html;
 use yii\widgets\Pjax;
+use koperdog\yii2nsblog\models\Category;
 
 /* @var $this yii\web\View */
 /* @var $searchModel koperdog\yii2nsblog\models\CategorySearch */
@@ -18,15 +19,22 @@ $this->registerJsVar('sortUrl', yii\helpers\Url::to(['sort']));
 
     <h1><?= Html::encode($this->title) ?></h1>
 
-    <p>
-        <?= Html::a(Yii::t('nsblog', 'Create Category'), ['create'], ['class' => 'btn btn-success']) ?>
-    </p>
     <?php Pjax::begin(); ?>
     
-    <?php
-//    debug($dataProvider->getModels());
-    ?>
-
+    <div class="section-justify">
+        <div>
+            <?= Html::a(Yii::t('nsblog', 'Create Category'), ['create'], ['class' => 'btn btn-success']) ?>
+        </div>
+        <div class="zone-section">
+            <div class="domain-change">
+                <?= koperdog\yii2sitemanager\widgets\local\DomainList::widget();?>
+            </div>
+            <div class="language-change">
+                <?= koperdog\yii2sitemanager\widgets\local\LanguageList::widget();?>
+            </div>
+        </div>
+    </div>
+    
     <?=    \koperdog\yii2treeview\TreeView::widget([
         'dataProvider' => $dataProvider,
         'filterModel'  => $searchForm,
@@ -41,7 +49,7 @@ $this->registerJsVar('sortUrl', yii\helpers\Url::to(['sort']));
                 'attribute' => 'name',
                 'format' => 'html',
                 'value' => function($model, $key, $index){
-                    $anchor = str_repeat(' — ', $model->depth - 1).$model->categoryValue->name;
+                    $anchor = str_repeat(' — ', $model->depth - 1).$model->categoryContent->name;
                     return Html::a($anchor, yii\helpers\Url::to(['update', 'id' => $model->id]));
                 }
             ],
@@ -55,15 +63,22 @@ $this->registerJsVar('sortUrl', yii\helpers\Url::to(['sort']));
             ],
             [
                 'label' => 'author',
-                'filter' => true,
-                'attribute' => 'author_id',
+                'attribute' => 'author_name',
                 'format' => 'html',
                 'value' => function($model, $key, $index){
                     return Html::a($model->author->username, yii\helpers\Url::to(['update', 'id' => $model->id]));
                 }  
             ],
+            [
+                'label' => 'image',
+                'attribute' => 'categoryContent.image',
+                'format' => 'image',
+            ],
             'position',
-            'status'
+            [
+                'attribute' => 'status',
+                'filter' => Category::getStatuses(),
+            ],
         ]
     ]);?>
     

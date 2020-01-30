@@ -6,11 +6,10 @@ use yii\helpers\Html;
 /* @var $model koperdog\yii2nsblog\models\Category */
 
 $this->title = Yii::t('nsblog', 'Update Category: {name}', [
-    'name' => $model->categoryValue->name,
+    'name' => $model->categoryContent->name,
 ]);
 $this->params['breadcrumbs'][] = ['label' => Yii::t('nsblog', 'Categories'), 'url' => ['index']];
-$this->params['breadcrumbs'][] = ['label' => $model->categoryValue->name, 'url' => ['view', 'id' => $model->id]];
-$this->params['breadcrumbs'][] = Yii::t('nsblog', 'Update');
+$this->params['breadcrumbs'][] = $model->categoryContent->name;
 ?>
 <div class="category-update">
 

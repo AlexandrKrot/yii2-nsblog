@@ -13,4 +13,10 @@
     color:red;
     margin-left:7px;
 }
+.tree-view .category > div img{
+    max-width: 100%;
+}
 
+.categoryContent_image{
+    max-width:120px;
+}

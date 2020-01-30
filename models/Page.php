@@ -40,6 +40,8 @@ class Page extends \yii\db\ActiveRecord
 {
     const SOURCE_TYPE = 1;
     
+    const STATUS = ['DRAFT' => 1, 'PUBLISHED' => 2, 'ARCHIVE' => 3];
+    
     public $addCategories;
     public $addPages;
     

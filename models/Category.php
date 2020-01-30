@@ -33,11 +33,19 @@ use yii\db\Expression;
  * @property MetaBlogCategory[] $metaBlogCategories
  * @property RelatedCategory[] $relatedCategories
  * @property RelatedCategory[] $relatedCategories0
+ * 
+ * @property int $records_per_page
+ * @property string sort
+ * @property string main_template JSON
+ * @property string category_template JSON
+ * @property string page_template JSON
  */
 class Category extends \yii\db\ActiveRecord
 {
     const OFFSET_ROOT = 1;
     const SOURCE_TYPE = 0;
+    
+    const STATUS = ['DRAFT' => 1, 'PUBLISHED' => 2, 'ARCHIVE' => 3];
     
     public $addCategories;
     public $addPages;
@@ -88,12 +96,16 @@ class Category extends \yii\db\ActiveRecord
     {
         return [
             [['url', 'author_id', 'status', 'publish_at', 'access_read'], 'required'],
-            [['author_id', 'status', 'tree', 'lft', 'rgt', 'depth', 'position', 'access_read', 'parent_id'], 'integer'],
+            [['author_id', 'status', 'tree', 'lft', 'rgt', 'depth', 'position', 'access_read', 'parent_id', 'records_per_page'], 'integer'],
             [['position'], 'default', 'value' => 0],
+            [['status'], 'default', 'value' => self::STATUS['DRAFT']],
+            [['records_per_page'], 'default', 'value' => 15],
             [['publish_at'], 'date', 'format' => 'php:Y-m-d H:i:s'],
             [['publish_at'], 'default', 'value' => date('Y-m-d H:i:s')],
-            [['url'], 'string', 'max' => 255],
+            [['url', 'sort', 'main_template', 'category_template', 'page_template'], 'string', 'max' => 255],
             ['url', 'checkUrl'],
+            [['url'], 'match', 'pattern' => '/^[\w-]+$/', 
+                'message' => 'The field can contain only latin letters, numbers, and signs "_", "-"'],
             [['author_id'], 'default', 'value' => \Yii::$app->user->id],
             [['addCategories', 'addPages', 'rltPages', 'rltCategories'], 'safe'],
         ];
@@ -123,6 +135,7 @@ class Category extends \yii\db\ActiveRecord
             'addPages' => Yii::t('nsblog', 'Additional Pages'),
             'rltCategories' => Yii::t('nsblog', 'Related Categories'),
             'rltPages' => Yii::t('nsblog', 'Related Pages'),
+            'records_per_page' => Yii::t('nsblog', 'Record per page'),
         ];
     }
     
@@ -162,10 +175,10 @@ class Category extends \yii\db\ActiveRecord
                 );
         
         $rows = Category::find()
-            ->joinWith(['categoryValue' => function($query){
-                return CategoryValueQuery::getAll();;
+            ->joinWith(['categoryContent' => function($query){
+                return CategoryContentQuery::getAll();;
             }])
-            ->select(['category.id', 'tree', 'depth', 'lft', 'position', 'category_value.name'])
+            ->select(['category.id', 'tree', 'depth', 'lft', 'position', 'category_content.name'])
             ->andWhere(['NOT IN', 'category.id', 1])
             ->andWhere(['NOT IN', 'category.id', $children])
             ->orderBy('tree, lft, position')
@@ -176,7 +189,7 @@ class Category extends \yii\db\ActiveRecord
             
         $return = [];
         foreach ($rows as $row)
-            $return[$row->id] = str_repeat('-', $row->depth - self::OFFSET_ROOT) . ' ' . $row->categoryValue->name;
+            $return[$row->id] = str_repeat('-', $row->depth - self::OFFSET_ROOT) . ' ' . $row->categoryContent->name;
 
         return $return;
     }
@@ -226,6 +239,8 @@ class Category extends \yii\db\ActiveRecord
         ){
             $this->addError($attribute, \Yii::t('nsblog/error', 'This Url already exists'));
         }
+        
+        if(true){}
     }
     
     public function afterSave($insert, $changedAttributes) { 
@@ -385,9 +400,9 @@ class Category extends \yii\db\ActiveRecord
     /**
      * @return \yii\db\ActiveQuery
      */
-    public function getCategoryValue()
+    public function getCategoryContent()
     {
-        return $this->hasOne(CategoryValue::className(), ['category_id' => 'id']);
+        return $this->hasOne(CategoryContent::className(), ['category_id' => 'id']);
     }
 
     /**
@@ -396,5 +411,14 @@ class Category extends \yii\db\ActiveRecord
     public function getAuthor()
     {
         return $this->hasOne(\Yii::$app->user->identityClass, ['id' => 'author_id']);
+    }
+    
+    public static function getStatuses(): array
+    {
+        return [
+                    Category::STATUS['DRAFT']     => \Yii::t('nsblog', 'Draft'),
+                    Category::STATUS['PUBLISHED'] => \Yii::t('nsblog', 'Published'),
+                    Category::STATUS['ARCHIVE']   => \Yii::t('nsblog', 'Archive'),
+                ];
     }
 }

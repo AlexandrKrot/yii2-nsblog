@@ -4,7 +4,8 @@ namespace koperdog\yii2nsblog\repositories;
 use koperdog\yii2nsblog\models\{
     CategorySearch,
     Category,
-    CategoryValueQuery
+    CategoryContent,
+    CategoryContentQuery
 };
 
 /**
@@ -22,15 +23,18 @@ class CategoryRepository {
         return $this->searchModel;
     }
     
-    public function get(int $id): Category
+    public function get(int $id, $domain_id = null, $language_id = null): Category
     {
+        
+//        debug(CategoryContentQuery::getId($id, $domain_id, $language_id)->createCommand()->rawSql);
+        
         $model = Category::find()
-            ->joinWith(['categoryValue' => function($query) use ($id) {
-                return CategoryValueQuery::get($id);
+            ->with(['categoryContent' => function($query) use ($id, $domain_id, $language_id){
+                $query->andWhere(['id' => CategoryContentQuery::getId($id, $domain_id, $language_id)->one()]);
             }])
             ->andWhere(['category.id' => $id])
             ->one();
-            
+                   
         if(!$model){
             throw new \DomainException("Category with id: {$id} was not found");
         }
@@ -63,10 +67,10 @@ class CategoryRepository {
         return $model;
     }
     
-    public function search(array $params = []): \yii\data\BaseDataProvider
+    public function search(array $params = [], $domain_id = null, $language_id = null): \yii\data\BaseDataProvider
     {
         $this->searchModel = new CategorySearch();
-        $dataProvider = $this->searchModel->search($params);
+        $dataProvider = $this->searchModel->search($params, $domain_id, $language_id);
         
         return $dataProvider;
     }
@@ -80,6 +84,16 @@ class CategoryRepository {
         return true;
     }
     
+    public function saveContent(CategoryContent $model, $domain_id = null, $language_id = null): bool
+    {
+        if(($model->domain_id != $domain_id || $model->language_id != $language_id) && $model->getDirtyAttributes())
+        {
+            return $this->copyCategoryContent($model, $domain_id, $language_id);
+        }
+        
+        return $this->save($model);
+    }
+    
     public function link(string $name, $target, $model): void
     {
         $model->link($name, $target);
@@ -88,6 +102,7 @@ class CategoryRepository {
     public function appendTo(Category $model): bool
     {
         $parent = $this->get($model->parent_id);
+        
         if(!$model->appendTo($parent)){
             throw new \RuntimeException("Error append model");
         }
@@ -136,12 +151,23 @@ class CategoryRepository {
     public static function getAll($exclude = null): ?array
     {
         return Category::find()
-            ->joinWith(['categoryValue' => function($query){
-                return CategoryValueQuery::getAll();;
+            ->joinWith(['categoryContent' => function($query){
+                return CategoryContentQuery::getAll();;
             }])
-            ->select(['category.id', 'category_value.name'])
+            ->select(['category.id', 'category_content.name'])
             ->andWhere(['NOT IN', 'category.id', 1])
             ->andFilterWhere(['NOT IN', 'category.id', $exclude])
             ->all();
+    }
+    
+    private function copyCategoryContent(\yii\db\ActiveRecord $model, $domain_id, $language_id)
+    {
+        $newContent = new CategoryContent();
+        $newContent->attributes = $model->attributes;
+        
+        $newContent->domain_id   = $domain_id;
+        $newContent->language_id = $language_id;
+        
+        return $this->save($newContent);
     }
 }

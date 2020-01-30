@@ -9,7 +9,7 @@ use koperdog\yii2sitemanager\models\{
 };
 
 /**
- * This is the model class for table "{{%category_value}}".
+ * This is the model class for table "{{%category_content}}".
  *
  * @property int $id
  * @property int $category_id
@@ -30,14 +30,14 @@ use koperdog\yii2sitemanager\models\{
  * @property Domain $domain
  * @property Language $language
  */
-class CategoryValue extends \yii\db\ActiveRecord
+class CategoryContent extends \yii\db\ActiveRecord
 {
     /**
      * {@inheritdoc}
      */
     public static function tableName()
     {
-        return '{{%category_value}}';
+        return '{{%category_content}}';
     }
 
     /**
@@ -105,10 +105,10 @@ class CategoryValue extends \yii\db\ActiveRecord
 
     /**
      * {@inheritdoc}
-     * @return CategoryValueQuery the active query used by this AR class.
+     * @return CategoryContentQuery the active query used by this AR class.
      */
     public static function find()
     {
-        return new CategoryValueQuery(get_called_class());
+        return new CategoryContentQuery(get_called_class());
     }
 }

@@ -11,9 +11,16 @@ $this->registerJsVar('error_message', \Yii::t('nsblog/error', 'The form contains
 
 <div class="blog-edit">
     
-    <div class="btn-group" role="group" id="section_tabs">
-        <button type="button" class="btn btn-default active" data-section="main"><?=\Yii::t('nsblog', 'Category')?></button>
-        <button type="button" class="btn btn-default" data-section="seo"><?=\Yii::t('nsblog', 'SEO')?></button>
+    <div class="section-justify">
+        <div class="btn-group" role="group" id="section_tabs">
+            <button type="button" class="btn btn-default active" data-section="main"><?=\Yii::t('nsblog', 'Category')?></button>
+            <button type="button" class="btn btn-default" data-section="seo"><?=\Yii::t('nsblog', 'SEO')?></button>
+        </div>
+        
+        <div class="zone-section">
+            <?= koperdog\yii2sitemanager\widgets\local\DomainList::widget();?>
+            <?= koperdog\yii2sitemanager\widgets\local\LanguageList::widget();?>
+        </div>
     </div>
     
     <div id="form-errors">
@@ -22,7 +29,6 @@ $this->registerJsVar('error_message', \Yii::t('nsblog/error', 'The form contains
     
     <?php $form = ActiveForm::begin([
         'id' => 'blog-form',
-        
         ]); ?>
     
     <div id="main" class="active section">
@@ -83,6 +89,13 @@ $this->registerJsVar('error_message', \Yii::t('nsblog/error', 'The form contains
 
 <?php $this->registerJs(
 <<<JS
+
+if($('.change-local-zone').length){
+    $('.change-local-zone select').change(function(){
+        window.location.href = $(this).val();
+    });
+}
+        
 $('#section_tabs > button').click(function(){
     let section = $('#'+$(this).data('section'));
 
