@@ -35,6 +35,9 @@ use Yii;
  * @property MetaBlogPage[] $metaBlogPages
  * @property Domain $domain
  * @property Language $lang
+ * 
+ * @property string main_template JSON
+ * @property string page_template JSON
  */
 class Page extends \yii\db\ActiveRecord
 {
@@ -62,16 +65,14 @@ class Page extends \yii\db\ActiveRecord
     public function rules()
     {
         return [
-            [['name', 'url', 'image', 'publish_at', 'access_read', 'title', 'og_title', 'h1', 'status'], 'required'],
-            [['author_id', 'position', 'domain_id', 'lang_id', 'category_id', 'access_read', 'status'], 'integer'],
-            [['preview_text', 'full_text', 'description', 'og_description'], 'string'],
-            [['name', 'url', 'image', 'h1', 'title', 'og_title', 'keywords'], 'string', 'max' => 255],
+            [['url', 'publish_at', 'access_read'], 'required'],
+            [['author_id', 'position', 'category_id', 'access_read', 'status'], 'integer'],
+            [['url', 'main_template', 'page_template'], 'string', 'max' => 255],
             [['publish_at'], 'date', 'format' => 'php:Y-m-d H:i:s'],
             [['publish_at'], 'default', 'value' => date('Y-m-d H:i:s')],
             [['position'], 'default', 'value' => 0],
+            [['status'], 'default', 'value' => self::STATUS['DRAFT']],
             [['author_id'], 'default', 'value' => \Yii::$app->user->id],
-            [['domain_id'], 'exist', 'skipOnError' => true, 'targetClass' => \koperdog\yii2sitemanager\models\Domain::className(), 'targetAttribute' => ['domain_id' => 'id']],
-            [['lang_id'], 'exist', 'skipOnError' => true, 'targetClass' => \koperdog\yii2sitemanager\models\Language::className(), 'targetAttribute' => ['lang_id' => 'id']],
             [['url'], 'checkUrl']
         ];
     }
@@ -252,5 +253,38 @@ class Page extends \yii\db\ActiveRecord
                 ->viaTable(PageAssign::tableName(), ['resource_id' => 'id'], function(\yii\db\ActiveQuery $query){
                     return $query->andWhere(['type' => 1, 'source_type' => self::SOURCE_TYPE]);
                 });
+    }
+    
+    /**
+     * @return \yii\db\ActiveQuery
+     */
+    public function getPageContent()
+    {
+        return $this->hasOne(PageContent::className(), ['page_id' => 'id']);
+    }
+
+    /**
+     * @return \yii\db\ActiveQuery
+     */
+    public function getAuthor()
+    {
+        return $this->hasOne(\Yii::$app->user->identityClass, ['id' => 'author_id']);
+    }
+    
+    /**
+     * @return \yii\db\ActiveQuery
+     */
+    public function getCategory()
+    {
+        return $this->hasOne(Category::className(), ['id' => 'category_id']);
+    }
+    
+    public static function getStatuses(): array
+    {
+        return [
+            Category::STATUS['DRAFT']     => \Yii::t('nsblog', 'Draft'),
+            Category::STATUS['PUBLISHED'] => \Yii::t('nsblog', 'Published'),
+            Category::STATUS['ARCHIVE']   => \Yii::t('nsblog', 'Archive'),
+        ];
     }
 }

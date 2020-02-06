@@ -38,11 +38,13 @@ $this->registerJsVar('sortUrl', yii\helpers\Url::to(['sort']));
     <?=    \koperdog\yii2treeview\TreeView::widget([
         'dataProvider' => $dataProvider,
         'filterModel'  => $searchForm,
-        'id' => 'grid',
+        'id' => 'blog-grid',
 //        'collapse' => true,
         'depthRoot' => 1,
         'columns' => [
-            ['class' => '\koperdog\yii2treeview\base\CheckboxColumn'],
+            [
+                'class' => '\koperdog\yii2treeview\base\CheckboxColumn',
+            ],
             'id',
             [
                 'label' => 'name',

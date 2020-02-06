@@ -2,7 +2,8 @@
 
 namespace koperdog\yii2nsblog\repositories\read;
 use koperdog\yii2nsblog\models\{
-    Category    
+    Category,
+    CategoryContentQuery
 };
 
 /**
@@ -34,9 +35,20 @@ class CategoryReadRepository {
         return self::asTree(self::getSubcategories($id, $level));
     }
     
-    public static function getAll(): ?array
+    public static function getAll($domain_id = null, $language_id = null, $exclude = null): ?array
     {
-        return Category::find()->asArray()->all();
+//        debug($domain_id);
+//        debug($language_id);
+//        exit;
+        return Category::find()
+            ->joinWith(['categoryContent' => function($query) use ($domain_id, $language_id){
+                $in = \yii\helpers\ArrayHelper::getColumn(CategoryContentQuery::getAllId($domain_id, $language_id)->asArray()->all(), 'id');
+                $query->andWhere(['IN','category_content.id', $in]);
+            }])
+            ->andWhere(['NOT IN', 'category.id', 1])
+            ->andFilterWhere(['NOT IN', 'category.id', $exclude])
+            ->asArray()
+            ->all();
     }
         
     private static function asTree(array $models): ?array

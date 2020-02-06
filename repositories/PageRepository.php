@@ -1,10 +1,13 @@
 <?php
 
 namespace koperdog\yii2nsblog\repositories;
+
 use koperdog\yii2nsblog\models\{
     Page,
     Category,
-    PageSearch
+    PageSearch,
+    PageContentQuery,
+    PageContent,
 };
 
 /**
@@ -22,24 +25,32 @@ class PageRepository {
         return $this->searchModel;
     }
     
-    public function get(int $id): Page
+    public function get(int $id, $domain_id = null, $language_id = null): Page
     {
-        if(!$model = Page::findOne($id)){
+        
+        $model = Page::find()
+            ->with(['pageContent' => function($query) use ($id, $domain_id, $language_id){
+                $query->andWhere(['id' => PageContentQuery::getId($id, $domain_id, $language_id)->one()]);
+            }])
+            ->andWhere(['page.id' => $id])
+            ->one();
+        
+        if(!$model){
             throw new \DomainException("Page with id: {$id} was not found");
         }
         
         return $model;
     }
     
-    public function search(array $params = []): \yii\data\BaseDataProvider
+    public function search(array $params = [], $domain_id = null, $language_id = null): \yii\data\BaseDataProvider
     {
         $this->searchModel = new PageSearch();
-        $dataProvider = $this->searchModel->search($params);
+        $dataProvider = $this->searchModel->search($params, $domain_id, $language_id);
         
         return $dataProvider;
     }
     
-    public function save(Page $model): bool
+    public function save(\yii\db\ActiveRecord $model): bool
     {
         if(!$model->save()){
             throw new \RuntimeException('Error saving model');
@@ -48,17 +59,35 @@ class PageRepository {
         return true;
     }
     
+    public function link(string $name, $target, $model): void
+    {
+        $model->link($name, $target);
+    }
+    
+    public function saveContent(PageContent $model, $domain_id = null, $language_id = null): bool
+    {
+        if(($model->domain_id != $domain_id || $model->language_id != $language_id) && $model->getDirtyAttributes())
+        {
+            return $this->copyPageContent($model, $domain_id, $language_id);
+        }
+        
+        return $this->save($model);
+    }
+    
     public function delete(Post $model):void
     {
         $model->delete();
     }
     
-    public static function getAll($exclude = null): ?array
-    {
+    public static function getAll($exclude = null, $domain_id = null, $language_id = null): ?array
+    {        
         return Page::find()
-                ->select(['id', 'name'])
-                ->andFilterWhere(['NOT IN', 'id', $exclude])
-                ->all();
+            ->joinWith(['pageContent' => function($query) use ($domain_id, $language_id){
+                $in = \yii\helpers\ArrayHelper::getColumn(PageContentQuery::getAllId($domain_id, $language_id)->asArray()->all(), 'id');
+                $query->andWhere(['IN','page_content.id', $in]);
+            }])
+            ->andFilterWhere(['NOT IN', 'page.id', $exclude])
+            ->all();
     }
     
     public function getByPath(string $path): ?Page
@@ -82,5 +111,16 @@ class PageRepository {
         }
         
         return Page::find()->where(['url' => $page, 'category_id' => $category->id])->one();
+    }
+    
+    private function copyPageContent(\yii\db\ActiveRecord $model, $domain_id, $language_id)
+    {
+        $newContent = new PageContent();
+        $newContent->attributes = $model->attributes;
+        
+        $newContent->domain_id   = $domain_id;
+        $newContent->language_id = $language_id;
+        
+        return $this->save($newContent);
     }
 }

@@ -6,11 +6,12 @@ use yii\helpers\Html;
 /* @var $model koperdog\yii2nsblog\models\Page */
 
 $this->title = Yii::t('nsblog', 'Update Page: {name}', [
-    'name' => $model->name,
+    'name' => $model->pageContent->name,
 ]);
 $this->params['breadcrumbs'][] = ['label' => Yii::t('nsblog', 'Pages'), 'url' => ['index']];
-$this->params['breadcrumbs'][] = ['label' => $model->name, 'url' => ['view', 'id' => $model->id]];
-$this->params['breadcrumbs'][] = Yii::t('nsblog', 'Update');
+$this->params['breadcrumbs'][] = $model->pageContent->name;
+
+koperdog\yii2nsblog\AssetBundle::register($this);
 ?>
 <div class="page-update">
 

@@ -3,7 +3,11 @@
 namespace koperdog\yii2nsblog\useCases;
 
 use \koperdog\yii2nsblog\repositories\PageRepository;
-use koperdog\yii2nsblog\models\Page;
+use koperdog\yii2nsblog\models\{
+    Page,
+    PageContent,
+    forms\PageForm
+};
 
 /**
  * Description of CategoryService
@@ -37,32 +41,21 @@ class PageService {
         return $model;
     }
     
-    public function save(Page $model): bool
+    public function save(Page $model, \yii\base\Model $form, $domain_id = null, $language_id = null): bool
     {
-        if($model->getDirtyAttributes(['parent_id']) && ($model->id != $model->parent_id)){
-            if(empty($model->parent_id)) $model->parent_id = 1;
+        $model->load($form->attributes, '');
+        $model->pageContent->load($form->pageContent->attributes, ''); 
+        
+        if($model->getDirtyAttributes(['category_id']) && ($model->id != $model->category_id)){
+            if(empty($model->category_id)) $model->category_id = 1;
         }
+        
             
-//        $transaction = \Yii::$app->db->beginTransaction();
-//        try{
-            $this->repository->save($model);
-//        } catch(\Exception $e){
-//            $transaction->rollBack();
-//            return false;
-//        }
-        
-        return true;
-    }
-    
-    public function create(Page $form): bool
-    {
-        $page = new Page();
-        $page->attributes = $form->attributes;
-        if(empty($page->parent_id)) $page->parent_id = 1;
-        
         $transaction = \Yii::$app->db->beginTransaction();
         try{
-            $this->repository->save($page);
+            $this->repository->save($model);
+            $this->repository->saveContent($model->pageContent, $domain_id, $language_id);
+            
             $transaction->commit();
         } catch(\Exception $e){
             $transaction->rollBack();
@@ -70,6 +63,28 @@ class PageService {
         }
         
         return true;
+    }
+    
+    public function create(PageForm $form)
+    {
+        $page = new Page();
+        $page->attributes = $form->attributes;
+        if(empty($page->category_id)) $page->category_id = 1;
+        
+        $pageContent = new PageContent();
+        $pageContent->attributes = $form->pageContent->attributes;
+        
+        $transaction = \Yii::$app->db->beginTransaction();
+        try{
+            $this->repository->save($page);
+            $this->repository->link('page', $page, $pageContent);
+            $transaction->commit();
+        } catch(\Exception $e){
+            $transaction->rollBack();
+            return false;
+        }
+        
+        return $page;
     }
     
     public function delete(Page $model): bool

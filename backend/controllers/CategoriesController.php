@@ -51,6 +51,9 @@ class CategoriesController extends Controller
         
         $this->categoryService    = $categoryService;
         $this->categoryRepository = $categoryRepository;
+        
+        $domain_id   = Domains::getEditorDomainId();
+        $language_id = Languages::getEditorLangaugeId();
     }
     
     public function actionSort()
@@ -92,7 +95,7 @@ class CategoriesController extends Controller
         $language_id = Languages::getEditorLangaugeId();
         
         return $this->render('view', [
-            'model' => $this->findModel($id, $domain_id, $langauge_id),
+            'model' => $this->findModel($id, $domain_id, $language_id),
         ]);
     }
 
@@ -105,8 +108,11 @@ class CategoriesController extends Controller
     {
         $form = new CategoryForm();
         
-        $allCategories = $this->findCategories();
-        $allPages      = $this->findPages();
+        $domain_id   = Domains::getEditorDomainId();
+        $language_id = Languages::getEditorLangaugeId();
+        
+        $allCategories = $this->findCategories($domain_id, $language_id);
+        $allPages      = $this->findPages($domain_id, $language_id);
         
         if (
             $form->load(Yii::$app->request->post()) && $form->validate()
@@ -145,8 +151,8 @@ class CategoriesController extends Controller
         $form  = new CategoryForm();
         $form->loadModel($model);
         
-        $allCategories = $this->findCategories($id);
-        $allPages      = $this->findPages();
+        $allCategories = $this->findCategories($domain_id, $language_id, $id);
+        $allPages      = $this->findPages($domain_id, $language_id);
         
         if(
             $form->load(Yii::$app->request->post()) && $form->validate()
@@ -185,14 +191,14 @@ class CategoriesController extends Controller
         return $this->redirect(['index']);
     }
     
-    private function findCategories($id = null): ?array
+    private function findCategories($domain_id = null, $language_id = null, $id = null): ?array
     {
-        return ArrayHelper::map(CategoryRepository::getAll($id), 'id', 'categoryContent.name');
+        return ArrayHelper::map(CategoryRepository::getAll($domain_id, $language_id, $id), 'id', 'categoryContent.name');
     }
     
-    private function findPages($id = null):?array
+    private function findPages($domain_id = null, $language_id = null, $id = null):?array
     {
-        return ArrayHelper::map(PageRepository::getAll($id), 'id', 'name');
+        return ArrayHelper::map(PageRepository::getAll($domain_id, $language_id, $id), 'id', 'pageContent.name');
     }
 
     /**

@@ -1,6 +1,7 @@
 <?php
 
 namespace koperdog\yii2nsblog\repositories;
+
 use koperdog\yii2nsblog\models\{
     CategorySearch,
     Category,
@@ -24,10 +25,7 @@ class CategoryRepository {
     }
     
     public function get(int $id, $domain_id = null, $language_id = null): Category
-    {
-        
-//        debug(CategoryContentQuery::getId($id, $domain_id, $language_id)->createCommand()->rawSql);
-        
+    {        
         $model = Category::find()
             ->with(['categoryContent' => function($query) use ($id, $domain_id, $language_id){
                 $query->andWhere(['id' => CategoryContentQuery::getId($id, $domain_id, $language_id)->one()]);
@@ -44,8 +42,8 @@ class CategoryRepository {
     
     public function getParents(Category $model): ?array
     {
-        $parents = $model->parents()->all(); // offset depth shift 
-        array_shift($parents);
+        $parents = $model->parents()->all();
+        array_shift($parents); // offset depth shift 
         return $parents;
     }
     
@@ -148,13 +146,13 @@ class CategoryRepository {
         }
     }
     
-    public static function getAll($exclude = null): ?array
+    public function getAll($domain_id = null, $language_id = null, $exclude = null): ?array
     {
         return Category::find()
-            ->joinWith(['categoryContent' => function($query){
-                return CategoryContentQuery::getAll();;
+            ->joinWith(['categoryContent' => function($query) use ($domain_id, $language_id){
+                $in = \yii\helpers\ArrayHelper::getColumn(CategoryContentQuery::getAllId($domain_id, $language_id)->asArray()->all(), 'id');
+                $query->andWhere(['IN','category_content.id', $in]);
             }])
-            ->select(['category.id', 'category_content.name'])
             ->andWhere(['NOT IN', 'category.id', 1])
             ->andFilterWhere(['NOT IN', 'category.id', $exclude])
             ->all();

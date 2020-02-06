@@ -10,6 +10,8 @@ $this->title = Yii::t('nsblog', 'Update Category: {name}', [
 ]);
 $this->params['breadcrumbs'][] = ['label' => Yii::t('nsblog', 'Categories'), 'url' => ['index']];
 $this->params['breadcrumbs'][] = $model->categoryContent->name;
+
+koperdog\yii2nsblog\AssetBundle::register($this);
 ?>
 <div class="category-update">
 

@@ -8,6 +8,8 @@ use yii\helpers\Html;
 $this->title = Yii::t('nsblog', 'Create Category');
 $this->params['breadcrumbs'][] = ['label' => Yii::t('nsblog', 'Categories'), 'url' => ['index']];
 $this->params['breadcrumbs'][] = $this->title;
+
+koperdog\yii2nsblog\AssetBundle::register($this);
 ?>
 <div class="category-create">
 

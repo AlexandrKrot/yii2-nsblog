@@ -4,21 +4,25 @@ namespace koperdog\yii2nsblog\models;
 
 use yii\base\Model;
 use yii\data\ActiveDataProvider;
-use koperdog\yii2nsblog\models\Page;
+use koperdog\yii2nsblog\models\PageContent;
 
 /**
  * PageSearch represents the model behind the search form of `koperdog\yii2nsblog\models\Page`.
  */
-class PageSearch extends Page
+class PageSearch extends PageContent
 {
+    public $url;
+    public $status;
+    public $author_name;
+    public $category;
+    
     /**
      * {@inheritdoc}
      */
     public function rules()
     {
         return [
-            [['id', 'author_id', 'position', 'domain_id', 'lang_id', 'publish_at', 'created_at', 'updated_at'], 'integer'],
-            [['name', 'url', 'image', 'preview_text', 'full_text'], 'safe'],
+            [['url', 'status', 'author_name', 'name', 'h1', 'image', 'preview_text', 'full_text', 'category'], 'safe'],
         ];
     }
 
@@ -38,41 +42,51 @@ class PageSearch extends Page
      *
      * @return ActiveDataProvider
      */
-    public function search($params)
+    public function search($params, $domain_id = null, $language_id = null, $category = null)
     {
-        $query = Page::find();
+        $query = Page::find()
+            ->joinWith(['pageContent' => function($query) use ($domain_id, $language_id){
+                $in = \yii\helpers\ArrayHelper::getColumn(PageContentQuery::getAllId($domain_id, $language_id)->asArray()->all(), 'id');
+                $query->andWhere(['IN','page_content.id', $in]);
+            }])
+            ->joinWith(['category'])
+            ->with(['category.categoryContent' => function($query) use ($domain_id, $language_id){
+                $in = \yii\helpers\ArrayHelper::getColumn(CategoryContentQuery::getAllId($domain_id, $language_id)->asArray()->all(), 'id');
+                $query->andWhere(['IN','category_content.id', $in]);
+            }])
+            ->andFilterWhere(['like', 'page_content.name', $this->name]);
+            
+//            debug($query->createCommand()->rawSql);
 
         // add conditions that should always apply here
 
         $dataProvider = new ActiveDataProvider([
             'query' => $query,
+            'pagination' => [
+                'pageSize' => 20,
+            ]
         ]);
 
         $this->load($params);
+        
+        if($params['category']){
+            $this->category = $params['category'];
+        }
 
         if (!$this->validate()) {
             // uncomment the following line if you do not want to return any records when validation fails
             // $query->where('0=1');
             return $dataProvider;
         }
-
-        // grid filtering conditions
-        $query->andFilterWhere([
-            'id' => $this->id,
-            'author_id' => $this->author_id,
-            'position' => $this->position,
-            'domain_id' => $this->domain_id,
-            'lang_id' => $this->lang_id,
-            'publish_at' => $this->publish_at,
-            'created_at' => $this->created_at,
-            'updated_at' => $this->updated_at,
-        ]);
-
-        $query->andFilterWhere(['like', 'name', $this->name])
-            ->andFilterWhere(['like', 'url', $this->url])
-            ->andFilterWhere(['like', 'image', $this->image])
-            ->andFilterWhere(['like', 'preview_text', $this->preview_text])
-            ->andFilterWhere(['like', 'full_text', $this->full_text]);
+        
+        $query->joinWith('author');
+        
+//        debug($this->category);
+        
+        $query->andFilterWhere(['category_id' => $this->category]);
+        $query->andFilterWhere(['like', 'page.url', $this->url]);
+        $query->andFilterWhere(['page.status' => $this->status]);
+        $query->andFilterWhere(['like', 'user.username', $this->author_name]);
 
         return $dataProvider;
     }

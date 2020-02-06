@@ -2,12 +2,12 @@
 /**
  * @var $this yii\web\View
  * @var form yii\widgets\ActiveForm;
- * @var $model koperdog\yii2nsblog\models\Category
+ * @var $model koperdog\yii2nsblog\models\Page
  */
 ?>
 
-<?= $form->field($model, 'title', ['options' => ['id' => 'field-title']])->textInput(['maxlength' => true]) ?>
-<?= $form->field($model, 'keywords')->textInput(['maxlength' => true]) ?>
-<?= $form->field($model, 'description')->textarea() ?>
-<?= $form->field($model, 'og_title', ['options' => ['id' => 'field-og_title']])->textInput(['maxlength' => true]) ?>
-<?= $form->field($model, 'og_description')->textarea() ?>
+<?= $form->field($model->pageContent, 'title', ['options' => ['id' => 'field-title']])->textInput(['maxlength' => true]) ?>
+<?= $form->field($model->pageContent, 'keywords')->textInput(['maxlength' => true]) ?>
+<?= $form->field($model->pageContent, 'description')->textarea() ?>
+<?= $form->field($model->pageContent, 'og_title', ['options' => ['id' => 'field-og_title']])->textInput(['maxlength' => true]) ?>
+<?= $form->field($model->pageContent, 'og_description')->textarea() ?>

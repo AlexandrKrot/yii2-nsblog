@@ -13,6 +13,7 @@ use koperdog\yii2nsblog\repositories\read\{
     CategoryReadRepository,
     PageReadRepository
 };
+use koperdog\yii2nsblog\models\Category;
 
 /**
  * Description of CategoryHelper
@@ -42,8 +43,9 @@ class CategoryHelper implements BlogHelper{
         return PageReadRepository::getPages($category);
     }
     
-    public static function getAll(): ?array
+    public static function getAll($domain_id = null, $language_id = null): ?array
     {
-        return CategoryReadRepository::getAll();
+        return CategoryReadRepository::getAll($domain_id, $language_id);
     }
+    
 }

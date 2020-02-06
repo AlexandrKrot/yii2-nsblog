@@ -42,6 +42,8 @@ use yii\db\Expression;
  */
 class Category extends \yii\db\ActiveRecord
 {
+    const ROOT_ID = 1;
+    
     const OFFSET_ROOT = 1;
     const SOURCE_TYPE = 0;
     
@@ -163,7 +165,7 @@ class Category extends \yii\db\ActiveRecord
      * @param  integer $node_id node's ID
      * @return array array of node
      */
-    public static function getTree($node_id = 0)
+    public static function getTree($node_id = 0, $domain_id = null, $language_id = null)
     {
         // don't include children and the node
         $children = [];
@@ -175,18 +177,16 @@ class Category extends \yii\db\ActiveRecord
                 );
         
         $rows = Category::find()
-            ->joinWith(['categoryContent' => function($query){
-                return CategoryContentQuery::getAll();;
+            ->joinWith(['categoryContent' => function($query) use ($domain_id, $language_id){
+                $in = \yii\helpers\ArrayHelper::getColumn(CategoryContentQuery::getAllId($domain_id, $language_id)->asArray()->all(), 'id');
+                $query->andWhere(['IN','category_content.id', $in]);
             }])
             ->select(['category.id', 'tree', 'depth', 'lft', 'position', 'category_content.name'])
-            ->andWhere(['NOT IN', 'category.id', 1])
+            ->andWhere(['NOT IN', 'category.id', self::ROOT_ID])
             ->andWhere(['NOT IN', 'category.id', $children])
             ->orderBy('tree, lft, position')
             ->all();
         
-//        debug($rows);
-//        exit;
-            
         $return = [];
         foreach ($rows as $row)
             $return[$row->id] = str_repeat('-', $row->depth - self::OFFSET_ROOT) . ' ' . $row->categoryContent->name;
@@ -388,14 +388,6 @@ class Category extends \yii\db\ActiveRecord
     {
         return $this->hasOne(Language::className(), ['id' => 'lang_id']);
     }
-
-    /**
-     * @return \yii\db\ActiveQuery
-     */
-    public function getMetaBlogCategories()
-    {
-        return $this->hasOne(MetaBlogCategory::className(), ['src_id' => 'id']);
-    }
     
     /**
      * @return \yii\db\ActiveQuery
@@ -416,9 +408,9 @@ class Category extends \yii\db\ActiveRecord
     public static function getStatuses(): array
     {
         return [
-                    Category::STATUS['DRAFT']     => \Yii::t('nsblog', 'Draft'),
-                    Category::STATUS['PUBLISHED'] => \Yii::t('nsblog', 'Published'),
-                    Category::STATUS['ARCHIVE']   => \Yii::t('nsblog', 'Archive'),
-                ];
+            Category::STATUS['DRAFT']     => \Yii::t('nsblog', 'Draft'),
+            Category::STATUS['PUBLISHED'] => \Yii::t('nsblog', 'Published'),
+            Category::STATUS['ARCHIVE']   => \Yii::t('nsblog', 'Archive'),
+        ];
     }
 }

@@ -48,7 +48,7 @@ class CategorySearch extends CategoryContent
         $name = $this->name;
         
         $query = Category::find()
-            ->joinWith(['categoryContent' => function($query) use ($domain_id, $language_id, $name){
+            ->joinWith(['categoryContent' => function($query) use ($domain_id, $language_id){
                 $in = \yii\helpers\ArrayHelper::getColumn(CategoryContentQuery::getAllId($domain_id, $language_id)->asArray()->all(), 'id');
                 $query->andWhere(['IN','category_content.id', $in]);
             }])

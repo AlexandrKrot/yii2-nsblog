@@ -2,7 +2,8 @@
 
 use koperdog\yii2nsblog\models\Category;
 
-
+use koperdog\yii2sitemanager\components\Domains;
+use koperdog\yii2sitemanager\components\Languages;
 /**
  * @var $this yii\web\View
  * @var form yii\widgets\ActiveForm;
@@ -37,8 +38,8 @@ use koperdog\yii2nsblog\models\Category;
 </div>
 
 <?= $form->field($model, 'parent_id')->dropDownList(
-    koperdog\yii2nsblog\models\Category::getTree($model->id), 
-    ['prompt' => Yii::t('nsblog','No Category'), 'class' => 'form-control']
+    koperdog\yii2nsblog\models\Category::getTree($model->id, Domains::getEditorDomainId(), Languages::getEditorLangaugeId()), 
+    ['prompt' => Yii::t('nsblog','No Parent'), 'class' => 'form-control']
 );?>
 
 <?= $form->field($model->categoryContent, 'h1')->textInput(['maxlength' => true]) ?>
@@ -146,7 +147,7 @@ use koperdog\yii2nsblog\models\Category;
     <div class="panel-body">
         <?= $form->field($model, 'access_read')->dropDownList([0 => \Yii::t('nsblog', 'Every One'), 1 => \Yii::t('nsblog', 'No One'), 2 => \Yii::t('nsblog', 'Admin')]) ?>
         <?= $form->field($model, 'records_per_page')->textInput(['maxlength' => true])?>
-        <?= $form->field($model, 'sort')->textInput(['maxlength' => true])?>
+        <?//= $form->field($model, 'sort')->textInput(['maxlength' => true])?>
         <hr/>
         <?= $form->field($model, 'mainTemplateName')->textInput(['maxlength' => true])?>
         <?= $form->field($model, 'mainTemplateApplySub')->checkbox()?>
