@@ -68,30 +68,20 @@ class PagesController extends Controller
         $domain_id   = Domains::getEditorDomainId();
         $language_id = Languages::getEditorLangaugeId();
                 
-        $categoriesProvider = new ArrayDataProvider([
-            'allModels' => $this->categoryRepository->getAll($domain_id, $language_id)
-        ]);
-                
         $dataProvider = $this->pageRepository->search(\Yii::$app->request->queryParams, $domain_id, $language_id);
         
         return $this->render('index', [
             'searchForm'        => $this->pageRepository->getSearchModel(),
             'dataProvider'      => $dataProvider,
-            'categoryProvider'  => $categoriesProvider,
         ]);
     }
 
-    /**
-     * Displays a single Page model.
-     * @param integer $id
-     * @return mixed
-     * @throws NotFoundHttpException if the model cannot be found
-     */
-    public function actionView($id)
+    public function actionChangeStatus()
     {
-        return $this->render('view', [
-            'model' => $this->findModel($id),
-        ]);
+        \Yii::$app->response->format = \yii\web\Response::FORMAT_JSON;
+        $data = json_decode(\Yii::$app->request->post('data'), true);
+        
+        return ['success' => $this->pageService->changeStatus($data)];
     }
 
     /**
@@ -103,8 +93,11 @@ class PagesController extends Controller
     {
         $form = new PageForm();
         
-        $allCategories = $this->findCategories();
-        $allPages      = $this->findPages();
+        $domain_id   = Domains::getEditorDomainId();
+        $language_id = Languages::getEditorLangaugeId();
+        
+        $allCategories = $this->findCategories($domain_id, $language_id);
+        $allPages      = $this->findPages($domain_id, $language_id);
         
         if (
             $form->load(Yii::$app->request->post()) && $form->validate()
@@ -144,8 +137,8 @@ class PagesController extends Controller
         $form  = new PageForm();
         $form->loadModel($model);
         
-        $allCategories = $this->findCategories();
-        $allPages      = $this->findPages($id);
+        $allCategories = $this->findCategories($domain_id, $language_id);
+        $allPages      = $this->findPages($domain_id, $language_id, $id);
 
         if ($form->load(Yii::$app->request->post()) && $form->validate()
             && $form->pageContent->load(Yii::$app->request->post()) && $form->pageContent->validate()) {
@@ -175,22 +168,28 @@ class PagesController extends Controller
      * @return mixed
      * @throws NotFoundHttpException if the model cannot be found
      */
-    public function actionDelete($id)
+    public function actionDelete()
     {
-        $model = $this->findModel($id);
-        $this->pageRepository->delete($model);
+        $data = json_decode(\Yii::$app->request->post('data'), true);
+        
+        if($this->pageService->delete($data)){
+            \Yii::$app->session->setFlash('success', \Yii::t('nsblog', 'Success delete'));
+        }
+        else{
+            \Yii::$app->session->setFlash('error', \Yii::t('nsblog/error', 'Error delete'));
+        }
         
         return $this->redirect(['index']);
     }
     
-    private function findCategories($id = null): ?array
+    private function findCategories($domain_id = null, $language_id = null, $id = null): ?array
     {
-        return ArrayHelper::map(CategoryRepository::getAll($id), 'id', 'categoryContent.name');
+        return ArrayHelper::map(CategoryRepository::getAll($domain_id, $language_id, $id), 'id', 'categoryContent.name');
     }
     
-    private function findPages($id = null):?array
+    private function findPages($domain_id = null, $language_id = null, $id = null):?array
     {
-        return ArrayHelper::map(PageRepository::getAll($id), 'id', 'name');
+        return ArrayHelper::map(PageRepository::getAll($domain_id, $language_id, $id), 'id', 'pageContent.name');
     }
 
     /**

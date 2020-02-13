@@ -32,7 +32,6 @@ use yii\db\Expression;
  * @property Language $lang
  * @property MetaBlogCategory[] $metaBlogCategories
  * @property RelatedCategory[] $relatedCategories
- * @property RelatedCategory[] $relatedCategories0
  * 
  * @property int $records_per_page
  * @property string sort

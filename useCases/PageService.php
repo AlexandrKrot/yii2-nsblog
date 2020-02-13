@@ -24,23 +24,6 @@ class PageService {
         $this->repository = $repository;
     }
     
-    public function get(int $id): ?Page
-    {
-        $model = Page::find()
-                ->with('additionalPages')
-                ->with('additionalCategories')
-                ->where(['id' => $id])
-                ->one();
-        
-        $model->addCategories = $model->additionalCategories;
-        $model->addPages      = $model->additionalPages;
-        
-        $model->rltCategories = $model->relatedCategories;
-        $model->rltPages      = $model->relatedPages;
-        
-        return $model;
-    }
-    
     public function save(Page $model, \yii\base\Model $form, $domain_id = null, $language_id = null): bool
     {
         $model->load($form->attributes, '');
@@ -87,13 +70,27 @@ class PageService {
         return $page;
     }
     
-    public function delete(Page $model): bool
+    public function delete(array $id): bool
     {
         $transaction = \Yii::$app->db->beginTransaction();
         try{
-            $this->repository->delete($model);
+            $this->repository->delete($id);
             $transaction->commit();
         } catch(\Exception $e){
+            $transaction->rollBack();
+            return false;
+        }
+        
+        return true;
+    }
+    
+    public function changeStatus(array $data): bool
+    {
+        $transaction = \Yii::$app->db->beginTransaction();
+        try{
+            $this->repository->setStatus($data['id'], $data['status']);
+            $transaction->commit();
+        } catch (\Exception $e) {
             $transaction->rollBack();
             return false;
         }

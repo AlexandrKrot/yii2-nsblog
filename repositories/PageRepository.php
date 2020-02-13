@@ -74,12 +74,30 @@ class PageRepository {
         return $this->save($model);
     }
     
-    public function delete(Post $model):void
+    public function setStatus(array $id, bool $status): void
     {
-        $model->delete();
+        $status = ['status' => $status? Page::STATUS['PUBLISHED'] : Page::STATUS['ARCHIVE']];
+        
+        if(!Page::updateAll($status, ['id' => $id])){
+            throw new \RuntimeException("Error update status");
+        }
     }
     
-    public static function getAll($exclude = null, $domain_id = null, $language_id = null): ?array
+    public function delete(array $data): void 
+    {
+        if(Page::deleteAll(['id' => $data])){
+            \koperdog\yii2nsblog\models\PageAssign::deleteAll(['OR', 
+                ['page_id' => $data], 
+                ['resource_id' =>  $data, 'source_type' => Page::SOURCE_TYPE]
+            ]);
+            \koperdog\yii2nsblog\models\CategoryAssign::deleteAll(['resource_id' =>  $data, 'source_type' => Page::SOURCE_TYPE]);
+        }
+        else{
+            throw new \RuntimeException("Error delete");
+        }
+    }
+    
+    public static function getAll($domain_id = null, $language_id = null, $exclude = null): ?array
     {        
         return Page::find()
             ->joinWith(['pageContent' => function($query) use ($domain_id, $language_id){

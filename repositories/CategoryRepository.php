@@ -136,14 +136,47 @@ class CategoryRepository {
         return $category;
     }
     
-    public function delete(Categroy $model): bool
+    public function setStatus(array $id, bool $status): void
     {
+        $status = ['status' => $status? Category::STATUS['PUBLISHED'] : Category::STATUS['ARCHIVE']];
+        
+        if(!Category::updateAll($status, ['id' => $id])){
+            throw new \RuntimeException("Error update status");
+        }
+    }
+    
+    public function delete(array $data): void 
+    {
+        foreach($data as $id){
+            $model = $this->get($id);
+            $this->deleteCategory($model);
+        }
+    }
+    
+    private function deleteCategory(Category $model): bool
+    {        
+        $id = $model->id;
+        
         if ($model->isRoot()){
-            $model->deleteWithChildren();
+            $result = $model->deleteWithChildren();
         }
         else{
-            $model->delete();
+            $result = $model->delete();
         }
+        
+        if($result){
+            \koperdog\yii2nsblog\models\CategoryAssign::deleteAll(['OR', 
+                ['category_id' => $id], 
+                ['resource_id' =>  $id, 'source_type' => Category::SOURCE_TYPE]
+            ]);
+            \koperdog\yii2nsblog\models\PageAssign::deleteAll(['resource_id' =>  $id, 'source_type' => Category::SOURCE_TYPE]);
+        }
+        else{
+            throw new \RuntimeException("Error delete");
+            return false;
+        }
+        
+        return true;
     }
     
     public function getAll($domain_id = null, $language_id = null, $exclude = null): ?array

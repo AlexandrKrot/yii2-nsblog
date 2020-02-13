@@ -9,7 +9,6 @@
 namespace koperdog\yii2nsblog\services\nestedSets;
 
 use Yii;
-use koperdog\yii2nsblog\models\Category;
 
 /**
  * Description of NestedSetsTreeMenu
@@ -17,7 +16,7 @@ use koperdog\yii2nsblog\models\Category;
  * @author Koperdog <koperdog.dev@gmail.com>
  * @version 1.0
  */
-class NestedSetsTreeMenu extends NestedSetsTree
+class NestedSetsTreeMenu extends \startpl\yii2NestedSetsMenu\base\NestedSetsTree
 {
 
     /**
@@ -36,18 +35,19 @@ class NestedSetsTreeMenu extends NestedSetsTree
      * @param $node
      * @return array
      */
-    public function addItem($node)
+    public function addItem($node): array
     {
-        $node = $this->renameTitle($node); //переименование элемента массива
+        $this->renameTitle($node); //переименование элемента массива
         $this->changeUrl($node);
-        $node = $this->visible($node); //видимость элементов меню
-        $node = $this->makeActive($node); //выделение активного пункта меню
+        $this->visible($node); //видимость элементов меню
+        $this->makeActive($node); //выделение активного пункта меню
 
         return $node;
     }
     
     protected function changeUrl(&$node){
-        $node['url'] = array_merge(\Yii::$app->request->queryParams, ['category' => $node['id']]);
+        $url = ['PageSearch' => ['category' => $node['id']]];
+        $node['url'] = \yii\helpers\ArrayHelper::merge(\Yii::$app->request->queryParams, $url);
     }
 
 
@@ -57,21 +57,10 @@ class NestedSetsTreeMenu extends NestedSetsTree
      * @param $node
      * @return array
      */
-    protected function renameTitle($node)
+    protected function renameTitle(&$node)
     {
-        $prefix = '';
-        
-        if($node[$this->childrenOutAttribute] !== null){
-            $prefix = '<span class="collapse_btn glyphicon glyphicon-chevron-right"></span>';
-        }
-        
-        $prefix .= str_repeat('&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;', $node[$this->depthAttribute] - Category::OFFSET_ROOT);
-        $newNode = [
-            $this->labelOutAttribute => $prefix.$node['categoryContent'][$this->labelAttribute],
-        ];
+        $node[$this->labelOutAttribute] = $node['categoryContent'][$this->labelAttribute];
         unset($node[$this->labelAttribute]);
-
-        return array_merge($node, $newNode);
     }
 
 
@@ -80,9 +69,8 @@ class NestedSetsTreeMenu extends NestedSetsTree
      * @param $node
      * @return array
      */
-    protected function visible($node)
+    protected function visible(&$node)
     {
-        $newNode = [];
 
         //Гость
         if (Yii::$app->user->isGuest) {
@@ -90,21 +78,15 @@ class NestedSetsTreeMenu extends NestedSetsTree
             //Действие logout по-умолчанию проверяется на метод POST.
             //При использовании подкорректировать VerbFilter в контроллере (удалить это действие или добавить GET).
             if ($node['url'] === '/logout') {
-                $newNode = [
-                    'visible' => false,
-                ];
+                $node['visible'] = false;
             }
 
         //Авторизованный пользователь
         } else {
             if ($node['url'] === '/login' || $node['url'] === '/signup') {
-                $newNode = [
-                    'visible' => false,
-                ];
+                $node['visible'] = false;
             }
         }
-
-        return array_merge($node, $newNode);
     }
 
 
@@ -116,11 +98,13 @@ class NestedSetsTreeMenu extends NestedSetsTree
      * @param $node
      * @return array
      */
-    private function makeActive($node)
+    private function makeActive(&$node)
     {
-        $path = Yii::$app->request->get();        
-        $node['active'] = ($path['category'] == $node['id'] || $path['PageSearch']['category'] == $node['id']);
-        return $node;
+        $path = Yii::$app->request->get();
+        
+        if($path['PageSearch']['category'] == $node['id']){ //for not active !isset
+            $node['active'] = true;
+        }
     }
 
 }

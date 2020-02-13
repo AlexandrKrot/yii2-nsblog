@@ -19,6 +19,8 @@ koperdog\yii2nsblog\AssetBundle::register($this);
 
     <?= $this->render('_form', [
         'model' => $model,
+        'allCategories' => $allCategories,
+        'allPages' => $allPages,
     ]) ?>
 
 </div>

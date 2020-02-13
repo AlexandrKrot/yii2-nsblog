@@ -26,6 +26,7 @@ return [
     'STATUS_MAIN'    => 'Основная настройка',
     'STATUS_CUSTOM'  => 'Пользовательская настройка',
     'Are you sure?'  => 'Вы уверены?',
+    'Are you sure you want to delete the selected?' => 'Вы уверены что хотите удалить выбранное ?',
     'Autofill'       => 'Автоподбор',
     'Name' => 'Название',
     'Url' => 'Ссылка',

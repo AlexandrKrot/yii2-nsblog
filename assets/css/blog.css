@@ -61,99 +61,7 @@
     background-color: #f2dede;
 }
 
-#blog-categories-list, 
-#blog-categories-list ul{
-	padding:0;
-	background:#fff;
-	list-style: none;
-}
-#blog-categories-list li{
-	border-bottom:1px solid #f4f4f4;
-}
-
-#blog-categories-list li.active > a{
-	border-left:5px solid #4cae4c;
-	padding-left:8px;
-}
-#blog-categories-list li a{
-	padding:8px;
-	border-left:5px solid transparent;
-	padding-left:3px;
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-#blog-categories-grid .table,
-.categories_list .table{
-	background: #fff;
-}
-#blog-categories-grid .thead div.name{
-	font-weight: bold;
-	border-bottom-color: #ddd;
-}
-
-#blog-categories-grid a,
-.categories_list a{
-    display:block;
-    width:100%;
-}
-#blog-categories-grid .categories{
-	padding-left:10px;
-}
-
-#blog-categories-grid .closed + .categories{
-	display: none;
-}
-
-#blog-categories-grid div.name,
-.categories_list div.name{
-	position: relative;
-	padding:7px;
-	border-bottom:1px solid #f4f4f4;
-}
-#blog-categories-grid .closed div.name{
-	display: flex;
-}
-#blog-categories-grid .closed .name .collapse_btn{
-    display: inline-flex;
-    width: 23px;
-    color: #3c8dbc;
-    justify-content: center;
-    align-items: center;
-    line-height: initial;
-    cursor: pointer;
-    transition: all .4s ease;
-}
-
-#blog-categories-grid .closed .name .collapse_btn:hover{
-	color:#367fa9;
-}
-
-#blog-categories-grid .closed .name .collapse_btn.open{
-	transform:rotate(90deg);
-}
-
+/* switch status active start */
 .switch_checkbox input[type=checkbox]{
 	height: 0;
 	width: 0;
@@ -196,9 +104,28 @@
 .switch_checkbox label:active:after {
 	width: 25px;
 }
-.categories_gridlist{
-	margin-top:20px;
+/* switch status active end */
+
+.section-right{
+	display: flex;
+	justify-content: flex-end;
+	text-align: right;
+	margin-bottom:10px;
 }
-.categories_list .name.active{
-	border-left:5px solid #00a65a;
+
+#group-controls{
+	display: none;
+	margin-bottom:0;
+	margin-left:10px;
+}
+#group-controls button + button{
+	margin-left:10px;
+}
+#group-controls button{
+	display: inline-flex;
+	align-items: center;
+	border-color:transparent;
+}
+#group-controls button span{
+	margin-right:5px;
 }

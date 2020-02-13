@@ -57,7 +57,7 @@ class CategoryForm extends Model
     public function rules()
     {
         return [
-            [['url', 'author_id', 'status', 'publish_at', 'access_read'], 'required'],
+            [['url', 'status', 'publish_at', 'access_read'], 'required'],
             [['id','author_id', 'status', 'access_read', 'parent_id', 'records_per_page'], 'integer'],
             [['mainTemplateApplySub', 'categoryTemplateApplySub', 'pageTemplateApplySub'], 'boolean'],
             [['status'], 'default', 'value' => Category::STATUS['DRAFT']],

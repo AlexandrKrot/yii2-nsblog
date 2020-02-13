@@ -42,7 +42,7 @@ class PageSearch extends PageContent
      *
      * @return ActiveDataProvider
      */
-    public function search($params, $domain_id = null, $language_id = null, $category = null)
+    public function search($params, $domain_id = null, $language_id = null)
     {
         $query = Page::find()
             ->joinWith(['pageContent' => function($query) use ($domain_id, $language_id){
@@ -56,26 +56,16 @@ class PageSearch extends PageContent
             }])
             ->andFilterWhere(['like', 'page_content.name', $this->name]);
             
-//            debug($query->createCommand()->rawSql);
-
-        // add conditions that should always apply here
-
         $dataProvider = new ActiveDataProvider([
             'query' => $query,
             'pagination' => [
                 'pageSize' => 20,
             ]
         ]);
-
+        
         $this->load($params);
         
-        if($params['category']){
-            $this->category = $params['category'];
-        }
-
         if (!$this->validate()) {
-            // uncomment the following line if you do not want to return any records when validation fails
-            // $query->where('0=1');
             return $dataProvider;
         }
         

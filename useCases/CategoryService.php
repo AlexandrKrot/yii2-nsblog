@@ -117,11 +117,25 @@ class CategoryService {
         return $result;
     }
     
-    public function delete(Category $model): bool
+    public function changeStatus(array $data): bool
     {
         $transaction = \Yii::$app->db->beginTransaction();
         try{
-            $this->repository->delete($model);
+            $this->repository->setStatus($data['id'], $data['status']);
+            $transaction->commit();
+        } catch (\Exception $e) {
+            $transaction->rollBack();
+            return false;
+        }
+        
+        return true;
+    }
+    
+    public function delete(array $data): bool
+    {
+        $transaction = \Yii::$app->db->beginTransaction();
+        try{
+            $this->repository->delete($data);
             $transaction->commit();
         } catch(\Exception $e){
             $transaction->rollBack();

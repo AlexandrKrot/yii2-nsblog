@@ -1,15 +1,48 @@
 (function() {
 'use strict';
 
-$('#blog-categories-grid .collapse_btn').click(function(){
-    $(this).toggleClass('open');
-    $(this).parent().parent().parent().children('.categories').slideToggle();
+$('#group-controls > button').click(function(){
+    const selected = $("#blog-grid").yiiGridView("getSelectedRows");
+    
+    switch($(this).data('type')){
+        case 'publish':
+            changeStatus({id: selected, status: true});
+            break;
+        case 'delete':
+            deletePost(selected);
+            break;
+    }
 });
 
-$('.categories_list a.active').parent().addClass('active');
+$('#blog-grid').change(function(event){
+    if($(event.target).hasClass('change-status')){
+        const target = $(event.target);
+        let id   = target.attr('name').match(/status\[(\d+)\]/);
+        let data = {'id': [id[1]], 'status': target.prop('checked')};
+        
+        changeStatus(data);
+    }
+    else if($(event.target).attr('name') == 'selection[]'){
+        if($(event.target).prop('checked') && !$(event.target).closest('thead').length){
+            $(event.target).parent().parent().addClass("danger");
+        }
+        else{
+            $(event.target).parent().parent().removeClass("danger");
+        }
+        
+        let keys = $("#blog-grid").yiiGridView("getSelectedRows");
+        
+        if(keys.length){
+            $('#group-controls').show();
+        }
+        else{
+            $('#group-controls').hide();
+        }
+    }
+});
 
 try{
-$("#blog-grid .categories, #grid-grid .categories_wr").sortable({
+$("#blog-grid .categories, #blog-grid .categories_wr").sortable({
     placeholder: "ui-state-highlight",
     forcePlaceholderSize: true,
     forceHelperSize: true,
@@ -19,14 +52,65 @@ $("#blog-grid .categories, #grid-grid .categories_wr").sortable({
         saveSortable($(this).sortable('toArray',{attribute: 'data-id'}));
     }
 });
-$("#grid-grid .categories, #grid-grid .categories_wr").disableSelection();
+$("#blog-grid .categories, #blog-grid .categories_wr").disableSelection();
 
-$("#grid-grid .categories, #grid-grid .categories_wr").on( "sortstart", function( event, ui ) {
+$("#blog-grid .categories, #blog-grid .categories_wr").on( "sortstart", function( event, ui ) {
     ui.placeholder.height(ui.item.outerHeight());
 } );
 }
 catch(error){
     console.log(error);
+}
+
+function deletePost(data)
+{   
+    if(!confirm(i18n.delete_confirm)){
+        return false;
+    }
+    
+    let formData = new FormData();
+    formData.set('data', JSON.stringify(data));
+    
+    $.ajax({
+        type: "POST",
+        url: url.delete,
+        data: formData,
+        dataType: 'json',
+        cache: false,
+        processData: false,
+        contentType: false,
+        success: function(response){
+        },
+        error: function(response){
+            console.error(response);
+        }
+    });
+}
+
+function changeStatus(data)
+{   
+    let formData = new FormData();
+    formData.set('data', JSON.stringify(data));
+    
+    $.ajax({
+        type: "POST",
+        url: url.status,
+        data: formData,
+        dataType: 'json',
+        cache: false,
+        processData: false,
+        contentType: false,
+        success: function(response){
+            if(data.status){
+                for(let id of data.id){
+                    $('#status_'+id).prop('checked', true);
+                }
+            }
+        },
+        error: function(response){
+            console.error(response);
+        }
+    });
 }
 
 function saveSortable(sort){
@@ -35,7 +119,7 @@ function saveSortable(sort){
 
     $.ajax({
         type: "POST",
-        url: sortUrl,
+        url: url.sort,
         data: data,
         dataType: 'json',
         cache: false,
@@ -109,18 +193,9 @@ $('#blog-form').on("afterValidate", function (event, messages, errorAttributes) 
     }
 });
 
-$('#blog-grid input[name="selection[]"]').change(function(){
-    if($(this).prop('checked') && !$(this).closest('thead').length){
-        $(this).parent().parent().addClass("danger");
-    }
-    else{
-        $(this).parent().parent().removeClass("danger");
-    }
-});
-
 $("#blog-grid-dd").on("click", function(e){
     e.preventDefault()
-    var keys = $("#grid-grid").yiiGridView("getSelectedRows");
+    var keys = $("#blog-grid").yiiGridView("getSelectedRows");
     $.ajax({
       url: "'. \yii\helpers\Url::toRoute('delete') .'",
       type: "POST",

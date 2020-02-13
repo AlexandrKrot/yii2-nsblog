@@ -127,6 +127,12 @@ class CategoriesController extends Controller
                 \Yii::$app->session->setFlash('error', \Yii::t('nsblog/error', 'Error create'));
             }
         }
+        else if(Yii::$app->request->post() && (!$form->validate() || !$form->categoryContent->validate())){
+            debug($form->errors);
+            debug($form->categoryContent);
+            \Yii::$app->session->setFlash('error', \Yii::t('nsblog/error', 'Fill in required fields'));
+            exit;
+        }
         
         return $this->render('create', [
                 'model' => $form,
@@ -177,6 +183,14 @@ class CategoriesController extends Controller
             'allPages' => $allPages,
         ]);
     }
+    
+    public function actionChangeStatus()
+    {
+        \Yii::$app->response->format = \yii\web\Response::FORMAT_JSON;
+        $data = json_decode(\Yii::$app->request->post('data'), true);
+        
+        return ['success' => $this->categoryService->changeStatus($data)];
+    }
 
     /**
      * Deletes an existing Category model.
@@ -184,10 +198,17 @@ class CategoriesController extends Controller
      * @param integer $id
      * @return mixed
      */
-    public function actionDelete($id)
+    public function actionDelete()
     {
-        $model = $this->findModel($id);
-        $this->categoryRepository->delete($model);
+        $data = json_decode(\Yii::$app->request->post('data'), true);
+        
+        if($this->categoryService->delete($data)){
+            \Yii::$app->session->setFlash('success', \Yii::t('nsblog', 'Success delete'));
+        }
+        else{
+            \Yii::$app->session->setFlash('error', \Yii::t('nsblog/error', 'Error delete'));
+        }
+        
         return $this->redirect(['index']);
     }
     

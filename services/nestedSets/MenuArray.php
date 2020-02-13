@@ -34,10 +34,12 @@ class MenuArray {
         }
         
         $path = \Yii::$app->request->get();
+        
+        $url = ['PageSearch' => ['category' => Category::ROOT_ID]];
         $default = [
-            'url' => array_merge(\Yii::$app->request->queryParams, ['category' => Category::ROOT_ID]),
+            'url' => \yii\helpers\ArrayHelper::merge(\Yii::$app->request->queryParams, $url),
             'label' => \Yii::t('nsblog', 'No Category'),
-            'active' => ($path['category'] == Category::ROOT_ID || $path['PageSearch']['category'] == Category::ROOT_ID)
+            'active' => ($path['PageSearch']['category'] == Category::ROOT_ID)
         ];
         
         array_unshift($menu, $default);

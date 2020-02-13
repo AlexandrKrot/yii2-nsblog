@@ -19,6 +19,18 @@ $this->title = Yii::t('nsblog', 'Pages');
 $this->params['breadcrumbs'][] = $this->title;
 
 koperdog\yii2nsblog\AssetBundle::register($this);
+
+$url = [
+    'status' => Url::to(['change-status']),
+    'sort'   => Url::to(['sort']),
+    'delete' => Url::to(['delete']),
+];
+
+$this->registerJsVar('url', $url);
+$this->registerJsVar('i18n', [
+    'confirm' => \Yii::t('nsblog', 'Are you sure?'),
+    'delete_confirm' => \Yii::t('nsblog', 'Are you sure you want to delete the selected?'),
+]);
 ?>
 
 <div class="page-index">
@@ -31,54 +43,44 @@ koperdog\yii2nsblog\AssetBundle::register($this);
         <div>
             <?= Html::a(Yii::t('nsblog', 'Create Page'), ['create'], ['class' => 'btn btn-success']) ?>
         </div>
-        <div class="zone-section">
-            <div class="domain-change">
-                <?= koperdog\yii2sitemanager\widgets\local\DomainList::widget();?>
+        <div class="section-right">
+            <div class="zone-section">
+                <div class="domain-change">
+                    <?= koperdog\yii2sitemanager\widgets\local\DomainList::widget();?>
+                </div>
+                <div class="language-change">
+                    <?= koperdog\yii2sitemanager\widgets\local\LanguageList::widget();?>
+                </div>
             </div>
-            <div class="language-change">
-                <?= koperdog\yii2sitemanager\widgets\local\LanguageList::widget();?>
+            <div id="group-controls" class="section-right">
+                <button data-type="publish" class="btn btn-success">
+                    <span class="glyphicon glyphicon-ok"></span>
+                    <?=\Yii::t('nsblog', 'Publish')?>
+                </button>
+                <button data-type="delete" id="delete_all" class="btn btn-danger">
+                    <span class="glyphicon glyphicon-remove"></span>
+                    <?=\Yii::t('nsblog', 'Delete')?>
+                </button>
             </div>
         </div>
     </div>
     
     <div class="row">
-    
+        
         <div class="col-md-2 categories_gridlist">
-            <?= yii\widgets\Menu::widget([
+            <?= \startpl\yii2NestedSetsMenu\Menu::widget([
                 'items' => \koperdog\yii2nsblog\services\nestedSets\MenuArray::getData(),
-                'options' => ['id'=>'blog-categories-list', 'class' => 'categories_list'],
+                'options' => ['id'=>'blog-categories-list2', 'class' => 'categories-menu2'],
                 'encodeLabels'=>false,
                 'activateParents'=>true,
                 'activeCssClass'=>'active',
-            ]); ?>
-            
-            <?php //= \koperdog\yii2treeview\TreeView::widget([
-//                'dataProvider' => $categoryProvider,
-//                'id' => 'blog-categories-grid2',
-//                'options' => ['class' => 'gridView categories_list'],
-//                'summary' => false,
-//                'collapse' => true,
-//                'columns' => [
-//                    [
-//                        'label' => \Yii::t('nsblog', 'Categories'),
-//                        'attribute' => 'name',
-//                        'format' => 'html',
-//                        'value' => function($model, $key, $index){
-//                            $html  = ($model->children !== null)? '<span class="collapse_btn glyphicon glyphicon-chevron-right"></span>' : '';
-//                            $class = \Yii::$app->request->get('category') == $model->id ? 'active' : ''; 
-//                            $link  = array_merge(\Yii::$app->request->queryParams, ['category' => $model->id]);
-//                            $html .= Html::a($model->categoryContent->name, Url::to($link), ['class' => $class]);
-//                            
-//                            return $html;
-//                        }
-//                    ],
-//                ],
-//            ]); ?>
+            ]);?>
         </div>
         <div class="col-md-10">
             <?= GridView::widget([
                 'dataProvider' => $dataProvider,
                 'filterModel' => $searchForm,
+                'summary' => false,
                 'id' => 'blog-grid',
                 'options' => ['class' => 'gridView'],
                 'columns' => [
@@ -120,11 +122,16 @@ koperdog\yii2nsblog\AssetBundle::register($this);
                     [
                         'label'     => 'status',
                         'attribute' => 'status',
+                        'options' => ['width'=>'120px'],
                         'format'    => 'raw',
                         'filter'    => Page::getStatuses(),
                         'value' => function($model, $key, $index){
                             $html  = Html::beginTag('div', ['class' => 'switch_checkbox']);
-                            $html .= Html::checkbox('status', $model->status == Page::STATUS['PUBLISHED'], ['id' => 'status_'.$model->id]);
+                            $html .= Html::checkbox(
+                                        "status[{$model->id}]", 
+                                        $model->status == Page::STATUS['PUBLISHED'], 
+                                        ['id' => 'status_'.$model->id, 'class' => 'change-status']
+                                    );
                             $html .= Html::label('Switch', 'status_'.$model->id);
                             $html .= Html::endTag('div');
                             return $html;
