@@ -404,6 +404,14 @@ class Category extends \yii\db\ActiveRecord
         return $this->hasOne(\Yii::$app->user->identityClass, ['id' => 'author_id']);
     }
     
+    /**
+     * @return \yii\db\ActiveQuery
+     */
+    public function getPagesCount()
+    {
+        return $this->hasMany(Page::className(), ['category_id' => 'id'])->count();
+    }
+    
     public static function getStatuses(): array
     {
         return [

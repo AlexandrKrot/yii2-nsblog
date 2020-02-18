@@ -23,28 +23,43 @@ use koperdog\yii2nsblog\models\Category;
  */
 class CategoryHelper implements BlogHelper{
     
-    public static function get(int $id): ?array
+    public static function get(int $id, $domain_id = null, $language_id = null): ?array
     {
-        return CategoryReadRepository::get($id);
+        $domain_id   = $domain_id !== null? : null; // !!!! Вставить $domain_id из cookie/session
+        $language_id = $language_id !== null? : null; // !!!! Вставить $language_id из cookie/session
+        
+        return CategoryReadRepository::get($id, $domain_id, $language_id);
     }
     
-    public static function getSubcategories(int $id, int $level = 1): ?array
+    public static function getSubcategories(int $id, int $level = 1, $domain_id = null, $language_id = null): ?array
     {
-        return CategoryReadRepository::getSubcategories($id, $level);
+        $domain_id   = $domain_id !== null? : null; // !!!! Вставить $domain_id из cookie/session
+        $language_id = $language_id !== null? : null; // !!!! Вставить $language_id из cookie/session
+        
+        return CategoryReadRepository::getSubcategories($id, $level, $domain_id, $language_id);
     }
     
-    public static function getSubcategoriesAsTree(int $id, int $level = 1): ?array
+    public static function getSubcategoriesAsTree(int $id, int $level = 1, $domain_id = null, $language_id = null): ?array
     {
-        return CategoryReadRepository::getSubcategoriesAsTree($id, $level);
+        $domain_id   = $domain_id !== null? : null; // !!!! Вставить $domain_id из cookie/session
+        $language_id = $language_id !== null? : null; // !!!! Вставить $language_id из cookie/session
+        
+        return CategoryReadRepository::getSubcategoriesAsTree($id, $level, $domain_id, $language_id);
     }
     
     public static function getPages(int $category): ?array
     {
+        $domain_id   = $domain_id !== null? : null; // !!!! Вставить $domain_id из cookie/session
+        $language_id = $language_id !== null? : null; // !!!! Вставить $language_id из cookie/session
+        
         return PageReadRepository::getPages($category);
     }
     
     public static function getAll($domain_id = null, $language_id = null): ?array
     {
+        $domain_id   = $domain_id !== null? : null; // !!!! Вставить $domain_id из cookie/session
+        $language_id = $language_id !== null? : null; // !!!! Вставить $language_id из cookie/session
+        
         return CategoryReadRepository::getAll($domain_id, $language_id);
     }
     

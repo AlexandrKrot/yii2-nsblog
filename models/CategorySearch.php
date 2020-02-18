@@ -54,8 +54,7 @@ class CategorySearch extends CategoryContent
             }])
             ->andFilterWhere(['like', 'category_content.name', $name])
             ->andWhere(['!=', 'category.id', 1]);
-            
-            
+                        
         $dataProvider = new ActiveDataProvider([
             'query' => $query,
             'pagination' => [

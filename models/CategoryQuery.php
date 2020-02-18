@@ -33,4 +33,12 @@ class CategoryQuery extends \yii\db\ActiveQuery
     {
         return parent::one($db);
     }
+    
+    /**
+     * @return \yii\db\ActiveQuery
+     */
+    public function getPagesCount()
+    {
+        return parent::hasMany(Page::className(), ['category_id' => 'id'])->count();
+    }
 }

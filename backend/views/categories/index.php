@@ -56,7 +56,7 @@ $this->registerJsVar('i18n', [
             </div>
         </div>
     </div>
-    
+        
     <?=    \koperdog\yii2treeview\TreeView::widget([
         'dataProvider' => $dataProvider,
         'filterModel'  => $searchForm,
@@ -94,9 +94,12 @@ $this->registerJsVar('i18n', [
                 }  
             ],
             [
-                'label' => 'image',
-                'attribute' => 'categoryContent.image',
-                'format' => 'image',
+                'label' => \Yii::t('nsblog', 'Number of pages'),
+                'attribute' => 'pagesCount',
+                'format' => 'text',
+                'value' => function($model, $key, $index){
+                    return $model->getPagesCount();
+                }
             ],
             'position',
             [

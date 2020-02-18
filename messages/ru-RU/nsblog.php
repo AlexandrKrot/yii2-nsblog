@@ -53,5 +53,6 @@ return [
     'The field can contain only latin letters, numbers, and signs "_", "-"' => 'Поле может содержать только латинские буквы, цифры, и знаки "_", "-"',
     'Settings of view' => 'Настройки просмотра',
     'Without Category' => 'Без категории',
-    'No Category' => 'Без категории'
+    'No Category' => 'Без категории',
+    'Number of pages' => 'Кол-во страниц',
 ];

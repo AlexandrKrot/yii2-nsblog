@@ -75,6 +75,7 @@ class PageSearch extends PageContent
         
         $query->andFilterWhere(['category_id' => $this->category]);
         $query->andFilterWhere(['like', 'page.url', $this->url]);
+        $query->andFilterWhere(['like', 'page_content.name', $this->name]);
         $query->andFilterWhere(['page.status' => $this->status]);
         $query->andFilterWhere(['like', 'user.username', $this->author_name]);
 
