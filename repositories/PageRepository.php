@@ -108,6 +108,17 @@ class PageRepository {
             ->all();
     }
     
+    public static function getAllByCategory(int $category, $domain_id = null, $language_id = null): ?array
+    {
+        return Page::find()
+            ->joinWith(['pageContent' => function($query) use ($domain_id, $language_id){
+                $in = \yii\helpers\ArrayHelper::getColumn(PageContentQuery::getAllId($domain_id, $language_id)->asArray()->all(), 'id');
+                $query->andWhere(['IN','page_content.id', $in]);
+            }])
+            ->andWhere(['category_id' => $category])
+            ->all();
+    }
+    
     public function getByPath(string $path): ?Page
     {
         $sections = explode('/', $path);

@@ -9,7 +9,7 @@ use yii\widgets\DetailView;
 $this->title = $model->categoryContent->name;
 
 foreach($model->parents as $key => $category){
-    $this->params['breadcrumbs'][] = ['url' => ['/blog/category', 'id' => $category->id], 'label' => $category->name];
+    $this->params['breadcrumbs'][] = ['url' => ['/blog/category', 'id' => $category->id], 'label' => $category->categoryContent->name];
 }
 
 $this->params['breadcrumbs'][] = $this->title;

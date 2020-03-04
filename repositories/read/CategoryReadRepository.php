@@ -16,7 +16,7 @@ use koperdog\yii2nsblog\models\{
  */
 class CategoryReadRepository {
     
-    public function get(int $id, $domain_id = null, $language_id = null): Category
+    public function get(int $id, $domain_id = null, $language_id = null): ?array
     {   
         $model = Category::find()
             ->with(['categoryContent' => function($query) use ($id, $domain_id, $language_id){
@@ -64,7 +64,7 @@ class CategoryReadRepository {
             ->asArray()
             ->all();
     }
-        
+    
     private static function asTree(array $models): ?array
     {
         $tree = [];

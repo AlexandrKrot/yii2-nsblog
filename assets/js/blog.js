@@ -133,6 +133,10 @@ function saveSortable(sort){
         }
     });
 }
+
+$('#btn-save-top').click(function(){
+    $('#btn-save-post').click();
+});
     
 $('#section_tabs > button').click(function(){
     let section = $('#'+$(this).data('section'));

@@ -22,13 +22,18 @@ use koperdog\yii2nsblog\repositories\read\{
  */
 class PageHelper implements BlogHelper{
     
-    public static function get(int $id): ?array
+    public static function get(int $id, $domain_id = null, $language_id = null): ?array
     {
-        return PageReadRepository::get($id);
+        return PageReadRepository::get($id, $domain_id, $language_id);
     }
     
-    public static function getAll(): ?array
+    public static function getAll($domain_id = null, $language_id = null): ?array
     {
-        return PageReadRepository::getAll();
+        return PageReadRepository::getAll($domain_id, $language_id);
+    }
+    
+    public static function getAllByCategory(int $category, $domain_id = null, $language_id = null): ?array
+    {
+        return PageReadRepository::getAllByCategory($category, $domain_id, $language_id);
     }
 }

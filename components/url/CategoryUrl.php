@@ -40,6 +40,15 @@ class CategoryUrl extends Url {
     
     protected function isActive(Category $model): bool
     {
-        return (bool)($model->status == Category::STATUS['PUBLISHED'] && strtotime($model->publish_at) < time());
+        $sections   = $model->parents()->andWhere(['>=', 'depth', Category::OFFSET_ROOT])->all();
+        $sections[] = $model;
+        
+        foreach($sections as $category){
+            if($category->status != Category::STATUS['PUBLISHED'] || strtotime($category->publish_at) > time()){
+                return false;
+            }
+        }
+                
+        return true;
     }
 }

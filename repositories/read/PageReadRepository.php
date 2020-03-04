@@ -2,7 +2,8 @@
 
 namespace koperdog\yii2nsblog\repositories\read;
 use koperdog\yii2nsblog\models\{
-    Page    
+    Page,
+    PageContentQuery
 };
 
 /**
@@ -13,18 +14,39 @@ use koperdog\yii2nsblog\models\{
  */
 class PageReadRepository {
     
-    public static function get(int $id): ?array
+    public static function get(int $id, $domain_id = null, $language_id = null): ?array
     {
-        return Page::find()->where(['id' => $id])->asArray()->one();
+        $model = Page::find()
+            ->with(['pageContent' => function($query) use ($id, $domain_id, $language_id){
+                $query->andWhere(['id' => PageContentQuery::getId($id, $domain_id, $language_id)->one()]);
+            }])
+            ->andWhere(['page.id' => $id])
+            ->asArray()
+            ->one();
+        
+        return $model;
     }
     
-    public static function getPages(int $category): ?array
+    public static function getAllByCategory(int $category, $domain_id = null, $language_id = null): ?array
     {
-        return Page::find()->where(['category_id' => $category])->asArray()->all();
+        return Page::find()
+            ->joinWith(['pageContent' => function($query) use ($domain_id, $language_id){
+                $in = \yii\helpers\ArrayHelper::getColumn(PageContentQuery::getAllId($domain_id, $language_id)->asArray()->all(), 'id');
+                $query->andWhere(['IN','page_content.id', $in]);
+            }])
+            ->andWhere(['category_id' => $category])
+            ->asArray()
+            ->all();
     }
     
-    public static function getAll(): ?array
+    public static function getAll($domain_id = null, $language_id = null): ?array
     {
-        return Page::find()->asArray()->all();
+        return Page::find()
+            ->joinWith(['pageContent' => function($query) use ($domain_id, $language_id){
+                $in = \yii\helpers\ArrayHelper::getColumn(PageContentQuery::getAllId($domain_id, $language_id)->asArray()->all(), 'id');
+                $query->andWhere(['IN','page_content.id', $in]);
+            }])
+            ->andFilterWhere(['NOT IN', 'page.id', $exclude])
+            ->all();
     }
 }

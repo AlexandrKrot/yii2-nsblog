@@ -48,8 +48,21 @@ class PageUrl extends Url {
         return false;
     }
     
-    private function isActive(Page $model): bool
+    protected function isActive(Page $model): bool
     {
+        $parent = $model->category;
+        
+        if($parent->id != Category::ROOT_ID){
+            $sections   = $parent->parents()->andWhere(['>=', 'depth', Category::OFFSET_ROOT])->all();
+            $sections[] = $parent;
+            
+            foreach($sections as $category){
+                if($category->status != Category::STATUS['PUBLISHED'] || strtotime($category->publish_at) > time()){
+                    return false;
+                }
+            }
+        }
+        
         return (bool)($model->status == Page::STATUS['PUBLISHED'] && strtotime($model->publish_at) < time());
     }
 }

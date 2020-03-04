@@ -6,8 +6,9 @@ use yii\widgets\DetailView;
 /* @var $this yii\web\View */
 /* @var $model koperdog\yii2nsblog\models\Page */
 
-$this->title = $model->name;
+$this->title = $model->id;
 $this->params['breadcrumbs'][] = ['label' => Yii::t('nsblog', 'Pages'), 'url' => ['index']];
+
 $this->params['breadcrumbs'][] = $this->title;
 \yii\web\YiiAsset::register($this);
 ?>
@@ -30,15 +31,9 @@ $this->params['breadcrumbs'][] = $this->title;
         'model' => $model,
         'attributes' => [
             'id',
-            'name',
             'url:url',
             'author_id',
-            'image',
-            'preview_text:ntext',
-            'full_text:ntext',
             'position',
-            'domain_id',
-            'lang_id',
             'publish_at',
             'created_at',
             'updated_at',

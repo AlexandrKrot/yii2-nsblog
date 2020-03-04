@@ -23,6 +23,10 @@ $this->registerJsVar('error_message', \Yii::t('nsblog/error', 'The form contains
         </div>
     </div>
     
+    <div class="text-right">
+        <?= Html::submitButton(Yii::t('nsblog', 'Save'), ['class' => 'btn btn-success', 'id' => 'btn-save-top']) ?>
+    </div>
+    
     <div id="form-errors">
         
     </div>
@@ -48,7 +52,7 @@ $this->registerJsVar('error_message', \Yii::t('nsblog/error', 'The form contains
     </div>
     
     <div class="form-group">
-        <?= Html::submitButton(Yii::t('nsblog', 'Save'), ['class' => 'btn btn-success']) ?>
+        <?= Html::submitButton(Yii::t('nsblog', 'Save'), ['class' => 'btn btn-success', 'id' => 'btn-save-post']) ?>
     </div>
 
     <?php ActiveForm::end(); ?>
