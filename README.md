@@ -25,7 +25,7 @@ and add the module to backend config:
 ```php
 'modules' => [
     //...
-    'manager' => [
+    'blog' => [
         'class' => 'koperdog\yii2nsblog\backend\Module',
     ],
     //...
@@ -35,7 +35,7 @@ Also you need add the module to frontend config:
 ```php
 'modules' => [
     //...
-    'manager' => [
+    'blog' => [
         'class' => 'koperdog\yii2nsblog\frontend\Module',
     ],
     //...
