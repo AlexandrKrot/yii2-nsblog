@@ -36,9 +36,7 @@ $this->registerJsVar('i18n', [
 <div class="page-index">
 
     <h1><?= Html::encode($this->title) ?></h1>
-
-    <?php Pjax::begin(); ?>
-    
+        
     <div class="section-justify">
         <div>
             <?= Html::a(Yii::t('nsblog', 'Create Page'), ['create'], ['class' => 'btn btn-success']) ?>
@@ -64,6 +62,8 @@ $this->registerJsVar('i18n', [
             </div>
         </div>
     </div>
+    
+    <?php Pjax::begin(); ?>
     
     <div class="row">
         
